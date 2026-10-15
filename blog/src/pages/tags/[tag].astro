@@ -1,0 +1,44 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('posts');
+  const tags = [...new Set(posts.flatMap(p => p.data.tags ?? []))];
+  return tags.map(tag => ({
+    params: { tag },
+    props: { posts: posts.filter(p => (p.data.tags ?? []).includes(tag)).sort((a,b) => b.data.date.valueOf() - a.data.date.valueOf()) },
+  }));
+}
+const { tag } = Astro.params;
+const { posts } = Astro.props;
+const fmtDate = (d: Date) => d.toISOString().slice(0, 10);
+---
+<Base title={`#${tag}`} current="blog">
+  <main id="main" class="blog-index">
+    <header class="tag-header">
+      <h1 class="tag-title"><span class="tag-hash">#</span>{tag}</h1>
+      <p class="tag-count">{posts.length} post{posts.length !== 1 ? 's' : ''}</p>
+    </header>
+    <div class="card-grid">
+      {posts.map(post => (
+        <article class="card">
+          <a href={`/${post.id}/`} class="card-link">
+            {post.data.image && (
+              <div class="card-image">
+                <img src={post.data.image} alt="" loading="lazy" />
+              </div>
+            )}
+            <div class="card-body">
+              <h2 class="card-title">{post.data.title}</h2>
+              <div class="card-meta">
+                <time class="card-date" datetime={post.data.date.toISOString()}>{fmtDate(post.data.date)}</time>
+              </div>
+            </div>
+          </a>
+        </article>
+      ))}
+    </div>
+    <p class="back-link"><a href="/tags/">&larr; All tags</a></p>
+  </main>
+</Base>

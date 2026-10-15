@@ -1,0 +1,135 @@
+---
+import fs from 'node:fs';
+import path from 'node:path';
+import Base from '../layouts/Base.astro';
+import { Content, frontmatter } from '../description.md';
+
+const title = frontmatter.title ?? 'Belief';
+const subtitle = frontmatter.subtitle ?? '';
+const documentTitle = frontmatter.documentTitle ?? 'Read the document';
+
+const pdfPath = path.join(process.cwd(), 'public', 'document.pdf');
+const hasDocument = fs.existsSync(pdfPath);
+const bytes = hasDocument ? fs.statSync(pdfPath).size : 0;
+const size = bytes >= 1048576 ? `${(bytes / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`;
+
+const chapters = [
+  {
+    part: 'Placeholder Part Title',
+    chapters: [
+      { title: 'Placeholder Title', items: [
+        'De finibus bonorum et malorum, perspiciatis unde omnis iste natus error',
+        'Sed ut perspiciatis unde omnis iste natus error sit voluptatem',
+      ]},
+      { title: 'Placeholder Title', items: [
+        'At vero eos et accusamus et iusto odio dignissimos ducimus',
+        'Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet',
+      ]},
+      { title: 'Placeholder Title', items: [
+        'Quis autem vel eum iure reprehenderit qui in ea voluptate',
+      ]},
+    ],
+  },
+  {
+    part: 'Placeholder Part Title',
+    chapters: [
+      { title: 'Placeholder Title', items: [
+        'Temporibus autem quibusdam et aut officiis debitis aut rerum necessitatibus',
+        'Nam libero tempore, cum soluta nobis est eligendi optio cumque',
+      ]},
+      { title: 'Placeholder Title', items: [
+        'Itaque earum rerum hic tenetur a sapiente delectus',
+        'Et harum quidem rerum facilis est et expedita distinctio',
+      ]},
+      { title: 'Placeholder Title', items: [
+        'Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit',
+        'Similique sunt in culpa qui officia deserunt mollitia animi',
+      ]},
+    ],
+  },
+  {
+    part: 'Placeholder Part Title',
+    chapters: [
+      { title: 'Placeholder Title', items: [
+        'Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium',
+        'Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis',
+      ]},
+      { title: 'Placeholder Title', items: [
+        'At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis',
+      ]},
+      { title: 'Placeholder Title', items: [
+        'Omnis voluptas assumenda est, omnis dolor repellendus',
+        'Reiciendis voluptatibus maiores alias consequatur aut perferendis doloribus',
+      ]},
+    ],
+  },
+];
+
+---
+<Base title={title} current="mission">
+  <main id="main">
+
+    <section class="manifesto-section manifesto-header" data-reveal>
+      <div class="manifesto-left">
+        <h1 class="manifesto-title">{title}</h1>
+        {subtitle && <p class="manifesto-subtitle">{subtitle}</p>}
+        {frontmatter.lastRevised && (
+          <p class="last-revised">Last revised: <time datetime={new Date(frontmatter.lastRevised).toISOString()}>{new Date(frontmatter.lastRevised).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' })}</time></p>
+        )}
+      </div>
+      <div class="manifesto-right">
+        <div class="entry-content"><Content /></div>
+      </div>
+    </section>
+
+    <section class="manifesto-section manifesto-toc" data-reveal>
+      <div class="manifesto-left">
+        <h2 class="toc-heading">Table of Contents</h2>
+        <p class="toc-note">Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium</p>
+      </div>
+      <div class="manifesto-right">
+        {chapters.map((part) => (
+          <div class="toc-part">
+            <h3 class="toc-part-title">{part.part}</h3>
+            {part.chapters.map(ch => (
+              <div class="toc-chapter">
+                <h4 class="toc-chapter-title">{ch.title}</h4>
+                <ul class="toc-items">
+                  {ch.items.map(item => (
+                    <li><a href="#">{item}</a></li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <section class="manifesto-section manifesto-document" data-reveal aria-label="Manuscript">
+      <div class="manifesto-left">
+        <h2 class="document-heading">Manuscript</h2>
+      </div>
+      <div class="manifesto-right">
+        {hasDocument ? (
+          <a class="document-link" href="/document.pdf">
+            <span class="document-title">{documentTitle}</span>
+            <span class="document-meta">PDF, {size}</span>
+          </a>
+        ) : (
+          <p class="document-empty">Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet.</p>
+        )}
+      </div>
+    </section>
+
+  </main>
+</Base>
+
+<script>
+  const observer = new IntersectionObserver(
+    (entries) => entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('is-visible'); observer.unobserve(e.target); } }),
+    { threshold: 0.1 }
+  );
+  document.querySelectorAll('[data-reveal]').forEach(el => observer.observe(el));
+
+</script>

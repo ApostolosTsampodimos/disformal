@@ -1,0 +1,102 @@
+---
+import type { GetStaticPaths } from 'astro';
+import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import { AUTHOR } from '../../site.config.mjs';
+
+export const getStaticPaths = (async ({ paginate }) => {
+  const posts = (await getCollection('posts')).sort(
+    (a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
+  );
+  return paginate(posts, { pageSize: 999 });
+}) satisfies GetStaticPaths;
+
+const { page } = Astro.props;
+const posts = page.data;
+const fmtDate = (d: Date) => d.toISOString().slice(0, 10);
+const years = [...new Set(posts.map(p => p.data.date.getUTCFullYear()))].sort((a, b) => b - a);
+const featured = posts.filter(p => p.data.featured).slice(0, 3);
+const hero = featured[0];
+const side = featured.slice(1, 3);
+---
+<Base title="Blog" current="blog">
+  <link slot="head" rel="alternate" type="application/rss+xml" title="RSS" href="/rss.xml" />
+  <main id="main">
+
+    <section class="blog-hero">
+      <h1 class="blog-hero-title">Articles</h1>
+      <p class="blog-hero-text">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua, ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+    </section>
+
+    {featured.length > 0 && (
+      <section class="featured-section">
+        <div class="featured-divider">
+          <span class="featured-label">FEATURED</span>
+        </div>
+        <div class="featured-grid">
+          {hero && (
+            <a href={`/${hero.id}/`} class="featured-hero">
+              {hero.data.image && (
+                <img class="featured-hero-img" src={hero.data.image} alt="" />
+              )}
+              <h2 class="featured-hero-title">{hero.data.title}</h2>
+              {hero.data.excerpt && <p class="featured-hero-excerpt">{hero.data.excerpt}</p>}
+              <span class="read-more">Read more</span>
+            </a>
+          )}
+          {side.length > 0 && (
+            <div class="featured-side">
+              {side.map(post => (
+                <a href={`/${post.id}/`} class="featured-side-card">
+                  <h3 class="featured-side-title">{post.data.title}</h3>
+                  {post.data.excerpt && <p class="featured-side-excerpt">{post.data.excerpt}</p>}
+                  <span class="read-more">Read more</span>
+                </a>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+    )}
+
+    <section class="allposts-section">
+      <div class="allposts-divider">
+        <span class="allposts-label">ALL POSTS</span>
+      </div>
+    </section>
+
+    <div class="blog-layout">
+      <div class="blog-feed">
+        {years.map(year => {
+          const yearPosts = posts.filter(p => p.data.date.getUTCFullYear() === year);
+          return (
+            <div id={`y${year}`}>
+              {yearPosts.map((post) => (
+                <article class="feed-entry">
+                  <a href={`/${post.id}/`} class="feed-link">
+                    <h2 class="feed-title">{post.data.title}</h2>
+                    {post.data.excerpt && <p class="feed-excerpt">{post.data.excerpt}</p>}
+                    {post.data.image && (
+                      <img class="feed-image" src={post.data.image} alt="" loading="lazy" />
+                    )}
+                    <div class="feed-meta">
+                      <time datetime={post.data.date.toISOString()}>{fmtDate(post.data.date)}</time>
+                      {(post.data.author ?? AUTHOR) && <span>{post.data.author ?? AUTHOR}</span>}
+                    </div>
+                  </a>
+                </article>
+              ))}
+            </div>
+          );
+        })}
+      </div>
+      <aside class="blog-sidebar">
+        <nav class="year-nav" aria-label="Filter by year">
+          {years.map(year => (
+            <a href={`#y${year}`} class="year-link">{year}</a>
+          ))}
+        </nav>
+      </aside>
+    </div>
+  </main>
+</Base>

@@ -1,0 +1,79 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import { buildLinkGraph } from '../lib/links';
+
+const posts = await getCollection('posts');
+const { linksTo } = buildLinkGraph(posts);
+
+// Build serialisable graph data
+const nodes = posts.map(p => ({ id: p.id, title: p.data.title, state: p.data.state ?? null }));
+const edges: { source: string; target: string }[] = [];
+linksTo.forEach((targets, sourceId) => {
+  targets.forEach(t => edges.push({ source: sourceId, target: t.id }));
+});
+const graphData = JSON.stringify({ nodes, edges });
+---
+<Base title="Graph" current="blog">
+  <main id="main" class="graph-page">
+    <div id="graph-container" data-graph={graphData}></div>
+    <p class="graph-hint">Click a node to open the post. Drag to explore.</p>
+  </main>
+</Base>
+
+<script>
+import * as d3 from 'https://cdn.jsdelivr.net/npm/d3@7/+esm';
+
+const container = document.getElementById('graph-container')!;
+const { nodes, edges } = JSON.parse(container.dataset.graph!);
+
+const W = container.clientWidth || window.innerWidth;
+const H = window.innerHeight * 0.82;
+
+const svg = d3.select(container).append('svg')
+  .attr('width', W).attr('height', H)
+  .attr('viewBox', `0 0 ${W} ${H}`)
+  .style('background', 'transparent');
+
+const g = svg.append('g');
+
+svg.call(d3.zoom<SVGSVGElement, unknown>()
+  .scaleExtent([0.3, 4])
+  .on('zoom', (event) => g.attr('transform', event.transform)));
+
+const simulation = d3.forceSimulation(nodes)
+  .force('link', d3.forceLink(edges).id((d: any) => d.id).distance(120))
+  .force('charge', d3.forceManyBody().strength(-280))
+  .force('center', d3.forceCenter(W / 2, H / 2))
+  .force('collision', d3.forceCollide(30));
+
+const stateColor: Record<string, string> = { seed: '#c9a84c', growing: '#5ab87a', evergreen: '#b9a4ff' };
+
+const link = g.append('g').selectAll('line').data(edges).join('line')
+  .attr('stroke', '#2c2a38').attr('stroke-width', 1.5);
+
+const node = g.append('g').selectAll('g').data(nodes).join('g')
+  .style('cursor', 'pointer')
+  .on('click', (_event: any, d: any) => { window.location.href = `/${d.id}/`; })
+  .call(d3.drag<any, any>()
+    .on('start', (event, d) => { if (!event.active) simulation.alphaTarget(0.3).restart(); d.fx = d.x; d.fy = d.y; })
+    .on('drag', (event, d) => { d.fx = event.x; d.fy = event.y; })
+    .on('end', (event, d) => { if (!event.active) simulation.alphaTarget(0); d.fx = null; d.fy = null; }));
+
+node.append('circle')
+  .attr('r', 8)
+  .attr('fill', (d: any) => stateColor[d.state] ?? '#3a3650')
+  .attr('stroke', '#b9a4ff').attr('stroke-width', 1);
+
+node.append('text')
+  .attr('x', 12).attr('y', 4)
+  .attr('fill', '#e9e7f2').attr('font-size', 12).attr('font-family', 'inherit')
+  .text((d: any) => d.title.length > 28 ? d.title.slice(0, 28) + '\u2026' : d.title);
+
+simulation.on('tick', () => {
+  link
+    .attr('x1', (d: any) => d.source.x).attr('y1', (d: any) => d.source.y)
+    .attr('x2', (d: any) => d.target.x).attr('y2', (d: any) => d.target.y);
+  node.attr('transform', (d: any) => `translate(${d.x},${d.y})`);
+});
+</script>

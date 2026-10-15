@@ -1,0 +1,90 @@
+---
+import { getCollection, render } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import { AUTHOR, SITE_NAME } from '../../site.config.mjs';
+import { buildLinkGraph } from '../lib/links';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('posts');
+  const { linksTo, linkedFrom } = buildLinkGraph(posts);
+  return posts.map((post) => ({
+    params: { slug: post.id },
+    props: { post, linksTo: linksTo.get(post.id)!, linkedFrom: linkedFrom.get(post.id)! },
+  }));
+}
+
+const { post, linksTo, linkedFrom } = Astro.props;
+const { Content } = await render(post);
+const date = post.data.date;
+const fmtDate = date.toISOString().slice(0, 10);
+const author = post.data.author ?? AUTHOR;
+
+// Build recommended reading: connected posts first, then recent
+const connected = [...linkedFrom, ...linksTo];
+const connectedIds = new Set(connected.map(p => p.id));
+const allPosts = (await getCollection('posts')).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+const recent = allPosts.filter(p => p.id !== post.id && !connectedIds.has(p.id));
+const recommended = [...connected, ...recent].slice(0, 3);
+---
+<Base title={post.data.title} current="blog" progress description={post.data.subtitle}>
+  <link slot="head" rel="alternate" type="application/rss+xml" title="RSS" href="/rss.xml" />
+  <script slot="head" type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": post.data.title,
+    "datePublished": post.data.date.toISOString(),
+    "dateModified": (post.data.lastRevised ?? post.data.date).toISOString(),
+    "author": { "@type": "Person", "name": author || "DISFORMAL" },
+    "publisher": { "@type": "Organization", "name": SITE_NAME }
+  })} />
+  <main id="main" class="post-layout">
+    <article class="post-main">
+      <header class="entry-header">
+        <h1 class="entry-title">{post.data.title}</h1>
+        {post.data.subtitle && <p class="entry-subtitle">{post.data.subtitle}</p>}
+        <div class="byline">
+          <time datetime={date.toISOString()}>{fmtDate}</time>
+          {author && <span class="author">{author}</span>}
+        </div>
+      </header>
+
+      {post.data.image && <img class="entry-hero" src={post.data.image} alt="" />}
+
+      <div class="entry-content"><Content /></div>
+    </article>
+
+    {recommended.length > 0 && (
+      <aside class="post-sidebar">
+        <div class="post-sidebar-inner">
+          <h2 class="sidebar-heading">Recommended Reading</h2>
+          <div class="sidebar-entries">
+            {recommended.map(p => (
+              <a href={`/${p.id}/`} class="sidebar-entry">
+                {p.data.image && <img src={p.data.image} alt="" class="sidebar-thumb" loading="lazy" />}
+                <h3 class="sidebar-title">{p.data.title}</h3>
+                {p.data.excerpt && <p class="sidebar-excerpt">{p.data.excerpt}</p>}
+              </a>
+            ))}
+          </div>
+        </div>
+      </aside>
+    )}
+  </main>
+
+<script>
+  document.querySelectorAll('.entry-content pre').forEach(pre => {
+    const btn = document.createElement('button');
+    btn.className = 'copy-code-btn';
+    btn.textContent = 'Copy';
+    btn.addEventListener('click', () => {
+      const code = pre.querySelector('code')?.textContent ?? '';
+      navigator.clipboard.writeText(code).then(() => {
+        btn.textContent = 'Copied!';
+        setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
+      });
+    });
+    (pre as HTMLElement).style.position = 'relative';
+    pre.appendChild(btn);
+  });
+</script>
+</Base>

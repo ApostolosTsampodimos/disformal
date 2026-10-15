@@ -1,0 +1,34 @@
+---
+import Base from '../layouts/Base.astro';
+import { SITE_NAME, TAGLINE } from '../../site.config.mjs';
+
+// The photo is cropped to fill the screen, so on narrow screens it is displayed much wider
+// than the viewport. `sizes` tells the browser that, so phones fetch the large file.
+const sizes = 'max(100vw, 140vh)';
+---
+<Base hero>
+  <link
+    slot="head"
+    rel="preload"
+    as="image"
+    href="/assets/hero-2560.webp"
+    imagesrcset="/assets/hero-1280.webp 1280w, /assets/hero-2560.webp 2560w"
+    imagesizes={sizes}
+    fetchpriority="high"
+  />
+  <main id="main">
+    <h1 class="screen-reader-text">{SITE_NAME}</h1>
+    <figure class="hero">
+      <img
+        src="/assets/hero-2560.webp"
+        srcset="/assets/hero-1280.webp 1280w, /assets/hero-2560.webp 2560w"
+        sizes={sizes}
+        width="2560"
+        height="1709"
+        alt=""
+        fetchpriority="high"
+      />
+      {TAGLINE && <figcaption class="hero-tagline">{TAGLINE}</figcaption>}
+    </figure>
+  </main>
+</Base>

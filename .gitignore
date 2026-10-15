@@ -1,0 +1,10 @@
+node_modules/
+dist/
+*.zip
+.astro/
+
+# Scratch / reference images in project root
+this*.png
+inflation.png
+b2764a45-*.jpg
+Screenshot*.png

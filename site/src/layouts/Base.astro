@@ -1,0 +1,54 @@
+---
+import '../styles/global.css';
+import { SITE_NAME, MAIN_URL, BLOG_URL, MISSION_URL } from '../../site.config.mjs';
+import { ClientRouter } from 'astro:transitions';
+
+interface Props {
+  title?: string;
+  description?: string;
+  ogImage?: string;
+  hero?: boolean;
+  current?: 'blog' | 'mission';
+}
+const { title, description, ogImage, hero = false, current } = Astro.props;
+const pageTitle = title ? `${title} – ${SITE_NAME}` : SITE_NAME;
+---
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#18181b">
+  <title>{pageTitle}</title>
+  <ClientRouter />
+  <link rel="manifest" href="/manifest.json">
+  <link rel="preload" as="image" href="/assets/wordmark.png" />
+  {description && <meta name="description" content={description} />}
+  <meta property="og:title" content={pageTitle} />
+  {description && <meta property="og:description" content={description} />}
+  <meta property="og:type" content={current ? 'article' : 'website'} />
+  <meta property="og:site_name" content={SITE_NAME} />
+  {ogImage && <meta property="og:image" content={ogImage} />}
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content={pageTitle} />
+  {description && <meta name="twitter:description" content={description} />}
+  <slot name="head" />
+</head>
+<body class={hero ? 'is-hero' : undefined}>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <p class="site-title">
+      <a href={`${MAIN_URL}/`} rel="home"><img src="/assets/wordmark.png" alt={SITE_NAME} width="1100" height="120"></a>
+    </p>
+    <nav class="site-nav" aria-label="Primary">
+      <a href={BLOG_URL} aria-current={current === 'blog' ? 'page' : undefined}>blog</a>
+      <a href={MISSION_URL} aria-current={current === 'mission' ? 'page' : undefined}>mission</a>
+    </nav>
+  </header>
+
+  <slot />
+
+  <footer class="site-footer"></footer>
+</body>
+</html>

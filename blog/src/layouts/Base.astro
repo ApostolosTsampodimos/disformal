@@ -1,0 +1,246 @@
+---
+import '../styles/global.css';
+import { SITE_NAME, MAIN_URL, BLOG_URL, MISSION_URL, SOCIAL } from '../../site.config.mjs';
+import { ClientRouter } from 'astro:transitions';
+
+interface Props {
+  title?: string;
+  description?: string;
+  ogImage?: string;
+  hero?: boolean;
+  current?: 'blog' | 'mission';
+  progress?: boolean;
+}
+const { title, description, ogImage, hero = false, current, progress = false } = Astro.props;
+const pageTitle = title ? `${title} – ${SITE_NAME}` : SITE_NAME;
+// Logos from Simple Icons (CC0). Links without a logo here are shown as text (only when a URL is set).
+const ICONS: Record<string, string> = {
+  GitHub: 'M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12',
+  Substack: 'M22.539 8.242H1.46V5.406h21.08v2.836zM1.46 10.812V24L12 18.11 22.54 24V10.812H1.46zM22.54 0H1.46v2.836h21.08V0z',
+};
+
+// GitHub and Substack always show their logo; with a URL it is a link, without one it is just the logo.
+const links = Object.entries(SOCIAL).filter(([label, url]) => url || ICONS[label]);
+---
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#18181b">
+  <title>{pageTitle}</title>
+  <ClientRouter />
+  <link rel="preload" as="image" href="/assets/wordmark.png" />
+  {description && <meta name="description" content={description} />}
+  <meta property="og:title" content={pageTitle} />
+  {description && <meta property="og:description" content={description} />}
+  <meta property="og:type" content={current ? 'article' : 'website'} />
+  <meta property="og:site_name" content={SITE_NAME} />
+  {ogImage && <meta property="og:image" content={ogImage} />}
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content={pageTitle} />
+  {description && <meta name="twitter:description" content={description} />}
+  <slot name="head" />
+</head>
+<body class={hero ? 'is-hero' : undefined}>
+  {progress && <div class="progress-bar" aria-hidden="true"></div>}
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header">
+    <p class="site-title">
+      <a href={`${MAIN_URL}/`} rel="home"><img src="/assets/wordmark.png" alt={SITE_NAME} width="1100" height="120"></a>
+    </p>
+    <nav class="site-nav" aria-label="Primary">
+      <a href={BLOG_URL} aria-current={current === 'blog' ? 'page' : undefined}>blog</a>
+      <a href={MISSION_URL} aria-current={current === 'mission' ? 'page' : undefined}>mission</a>
+    </nav>
+  </header>
+
+  <div class="snap-wrap">
+    <canvas id="snap-canvas" aria-hidden="true"></canvas>
+    <slot />
+  </div>
+
+  <footer class="site-footer">
+    {links.length > 0 && (
+      <nav class="social" aria-label="Social">
+        {links.map(([label, url]) =>
+          url ? (
+            <a href={url} rel="me noopener" target="_blank" title={label} aria-label={ICONS[label] ? label : undefined}>
+              {ICONS[label] ? (
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d={ICONS[label]} /></svg>
+              ) : (
+                label
+              )}
+            </a>
+          ) : (
+            <span class="social-icon" role="img" aria-label={label} title={label}>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d={ICONS[label]} /></svg>
+            </span>
+          )
+        )}
+      </nav>
+    )}
+  </footer>
+
+  <script>
+    function initSnap() {
+      const canvas = document.getElementById('snap-canvas');
+      if (!canvas || !(canvas instanceof HTMLCanvasElement)) return;
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      const wrap = canvas.parentElement;
+
+      let W, H, raf;
+      const particles = [];
+      const COLORS = [
+        [185, 164, 255],
+        [140, 110, 230],
+        [100, 70, 200],
+        [200, 180, 255],
+      ];
+      const COUNT = 180;
+      const ABSORB_ZONE = 60;
+      const GLOW_COLOR = [185, 164, 255];
+
+      function resize() {
+        W = wrap.offsetWidth;
+        H = wrap.offsetHeight;
+        canvas.width = W;
+        canvas.height = H;
+      }
+
+      function randColor() { return COLORS[Math.floor(Math.random() * COLORS.length)]; }
+
+      function spawn(p) {
+        const size = 2 + Math.random() * 4;
+        const c = randColor();
+        p.x = Math.random() * W;
+        p.y = H + Math.random() * 40;
+        p.origSize = size;
+        p.w = size;
+        p.h = size * (0.5 + Math.random());
+        p.vx = (Math.random() - 0.5) * 0.4;
+        p.vy = -0.3 - Math.random() * 0.5;
+        p.maxAlpha = 0.2 + Math.random() * 0.3;
+        p.alpha = 0;
+        p.phase = 'rising';
+        p.rot = Math.random() * Math.PI * 2;
+        p.rotV = (Math.random() - 0.5) * 0.02;
+        p.r = c[0]; p.g = c[1]; p.b = c[2];
+        p.glowAlpha = 0;
+      }
+
+      function init() {
+        particles.length = 0;
+        for (let i = 0; i < COUNT; i++) {
+          const p = {};
+          spawn(p);
+          p.y = Math.random() * H;
+          p.alpha = p.maxAlpha * 0.5;
+          particles.push(p);
+        }
+      }
+
+      function tick() {
+        ctx.clearRect(0, 0, W, H);
+
+        for (let i = 0; i < particles.length; i++) {
+          const p = particles[i];
+          const distToTop = p.y;
+
+          if (p.phase === 'rising') {
+            // fade in over bottom 20% of canvas
+            if (p.y > H * 0.8) {
+              p.alpha = Math.min(p.alpha + p.maxAlpha / 40, p.maxAlpha);
+            }
+
+            // normal drift
+            p.x += p.vx;
+            p.y += p.vy;
+            p.rot += p.rotV;
+
+            // enter absorb zone — start accelerating & glowing
+            if (distToTop < ABSORB_ZONE) {
+              p.phase = 'absorbing';
+            }
+          }
+
+          if (p.phase === 'absorbing') {
+            // accelerate upward
+            p.vy -= 0.015;
+            p.x += p.vx * 0.5;
+            p.y += p.vy;
+            p.rot += p.rotV * 0.5;
+
+            // pull horizontally toward nearest point (straight up)
+            const progress = 1 - Math.max(0, distToTop / ABSORB_ZONE);
+
+            // shift color toward bright purple
+            p.r += (GLOW_COLOR[0] - p.r) * 0.08;
+            p.g += (GLOW_COLOR[1] - p.g) * 0.08;
+            p.b += (GLOW_COLOR[2] - p.b) * 0.08;
+
+            // grow glow, brighten
+            p.glowAlpha = progress * 0.7;
+            p.alpha = p.maxAlpha + progress * (1 - p.maxAlpha);
+
+            // shrink as it merges
+            const shrink = 1 - progress * 0.7;
+            p.w = p.origSize * shrink;
+            p.h = p.origSize * shrink * (0.5 + Math.random() * 0.2);
+          }
+
+          // respawn when absorbed or off-screen
+          if (p.y < -5 || p.w < 0.3) {
+            spawn(p);
+            continue;
+          }
+
+          // draw glow halo (absorbing particles only)
+          if (p.glowAlpha > 0.01) {
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            ctx.globalAlpha = p.glowAlpha;
+            const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, p.origSize * 3);
+            grad.addColorStop(0, `rgba(${GLOW_COLOR[0]},${GLOW_COLOR[1]},${GLOW_COLOR[2]},0.6)`);
+            grad.addColorStop(0.5, `rgba(${GLOW_COLOR[0]},${GLOW_COLOR[1]},${GLOW_COLOR[2]},0.15)`);
+            grad.addColorStop(1, `rgba(${GLOW_COLOR[0]},${GLOW_COLOR[1]},${GLOW_COLOR[2]},0)`);
+            ctx.fillStyle = grad;
+            ctx.fillRect(-p.origSize * 3, -p.origSize * 3, p.origSize * 6, p.origSize * 6);
+            ctx.restore();
+          }
+
+          // draw particle
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate(p.rot);
+          ctx.globalAlpha = p.alpha;
+          ctx.fillStyle = `rgb(${Math.round(p.r)},${Math.round(p.g)},${Math.round(p.b)})`;
+          ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+          ctx.restore();
+        }
+
+        raf = requestAnimationFrame(tick);
+      }
+
+      const ro = new ResizeObserver(() => resize());
+      ro.observe(wrap);
+      resize();
+      init();
+      tick();
+
+      document.addEventListener('astro:before-swap', function cleanup() {
+        cancelAnimationFrame(raf);
+        ro.disconnect();
+        document.removeEventListener('astro:before-swap', cleanup);
+      });
+    }
+
+    initSnap();
+    document.addEventListener('astro:after-swap', initSnap);
+  </script>
+</body>
+</html>
