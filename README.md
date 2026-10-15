@@ -1,10 +1,6 @@
 # DISFORMAL
 
-A personal website built as three independent Astro static sites that share a
-design system but deploy separately: a hero landing page, a digital garden blog,
-and a mission statement page.
-
-**Live at:** disformal.com / blog.disformal.com / mission.disformal.com
+disformal.com 
 
 ---
 
@@ -13,25 +9,24 @@ and a mission statement page.
 ```
 disformal website/
 │
-├── site/               Hero landing page
-├── blog/               Digital garden (posts, tags, series, link graph)
-├── mission/            Manifesto + downloadable PDF
+├── site/                         Hero landing page
+├── blog/                         Digital garden (posts, tags, series, link graph)
+├── mission/                      Manifesto + downloadable PDF
 │
-├── CLAUDE.md           Rules for AI-assisted development
-├── FEATURE_REQUEST.md  Template for planning new features
-├── README.md           This file
+├── CLAUDE.md                     Rules for AI-assisted development
+├── FEATURE_REQUEST.md            Template for planning new features
+├── README.md                     This file
 │
-└── .claude/            Claude Code workflow infrastructure
-    ├── settings.json       Permission tiers and hook wiring
+└── .claude/                      Claude Code workflow infrastructure
+    ├── settings.json             Permission tiers and hook wiring
     └── hooks/
-        ├── protect-secrets.sh   Blocks access to .env, keys, credentials
-        ├── protect-config.sh    Blocks self-modification of Claude settings
-        └── format-code.sh       Auto-formats source files after edits
+        ├── protect-secrets.sh    Blocks access to .env, keys, credentials
+        ├── protect-config.sh     Blocks self-modification of Claude settings
+        └── format-code.sh        Auto-formats source files after edits
 ```
 
-Each sub-project is a self-contained Astro app with its own `node_modules`,
-`package.json`, and build output. They share one file — `site.config.mjs` —
-which must be kept identical across all three.
+All (sub-)domains are contained in the Astro app with their own `node_modules`,
+`package.json`, and build output. They share `site.config.mjs`.
 
 ---
 
@@ -41,25 +36,22 @@ which must be kept identical across all three.
 
 ```bash
 # Pick any sub-project
-cd site/     # or blog/ or mission/
+cd site/          # or blog/ or mission/
 npm install
-npm run dev  # starts dev server with hot reload
+npm run dev       # starts dev server with hot reload
 ```
 
 Build for production:
 ```bash
-npm run build    # creates dist/
-npm run preview  # preview the build locally
+npm run build     # creates dist/
+npm run preview   # preview the build locally
 ```
 
 ---
 
-## The Three Sites
+## Current website structure
 
 ### site/ — Hero Landing Page
-
-A single full-viewport page with a Ken Burns animated hero image, the site name,
-and navigation links to the blog and mission.
 
 ```
 site/src/
@@ -72,14 +64,7 @@ site/src/
     └── global.css      Design system + hero animation
 ```
 
-**Key assets:** `public/assets/hero-2560.webp`, `hero-1280.webp` (responsive
-hero), `header-2560.webp`, `footer-2560.webp` (decorative backgrounds).
-
-### blog/ — Digital Garden
-
-A full-featured blog with content collections, tagging, series, an interactive
-link graph, reading progress, code copy buttons, bookmarks, RSS, and optional
-comments (Giscus) and newsletter signup.
+### Blog
 
 ```
 blog/src/
@@ -115,7 +100,6 @@ tags: [physics, thinking]         # optional
 series: Motion Studies            # optional, groups related posts
 seriesOrder: 1                    # optional, order within series
 type: essay                       # 'essay' (default) or 'note'
-state: growing                    # 'seed', 'growing', or 'evergreen'
 audio: /assets/audio/my-post.mp3  # optional, shows audio player
 lastRevised: 2026-10-13           # optional, shown if set
 ---
@@ -127,15 +111,9 @@ Body text in Markdown.
 link graph page visualizes these connections, and each post shows "Linked from"
 and "Links to" sections automatically.
 
-**Post states:** The digital garden model — posts are living documents:
-- **seed** — early idea, rough draft
-- **growing** — developing, being revised
-- **evergreen** — mature, stable content
+### Mission
 
-### mission/ — Manifesto Page
-
-A single-page statement of purpose with scroll-reveal animations and an
-optional PDF download.
+Statement of purpose 
 
 ```
 mission/src/
@@ -174,7 +152,7 @@ all three. It controls:
 
 ## Design System
 
-All three sites share the same visual language defined in each project's
+All sites share the same visual language (currently) as seen in each project's
 `global.css`:
 
 | Token | Value | Usage |
@@ -190,30 +168,11 @@ All three sites share the same visual language defined in each project's
 - **Newsreader** — serif, used for body text and headings
 - **DM Mono** — monospace, used for code and technical elements
 
-**Motion:** All animations respect `prefers-reduced-motion`. Hero uses a Ken
-Burns pan effect. Mission page uses intersection-observer scroll reveals.
-Blog uses CSS scroll-driven reading progress.
+**Motion:** Hero uses a Ken Burns pan effect. Mission page uses intersection-observer scroll reveals. Blog uses CSS scroll-driven reading progress.
 
 ---
 
-## Deployment
-
-Static files are uploaded to Hostinger via hPanel File Manager.
-
-1. Create `blog` and `mission` subdomains in hPanel (Domains > Subdomains)
-2. Build each project: `npm run build`
-3. Upload:
-   - `site/dist/*` to `public_html/`
-   - `blog/dist/*` to the blog subdomain folder
-   - `mission/dist/*` to the mission subdomain folder
-4. Enable SSL for the domain and both subdomains
-
----
-
-## Claude Code Integration
-
-This project includes workflow infrastructure for AI-assisted development
-with Claude Code.
+## Claude Code 
 
 ### CLAUDE.md
 
@@ -235,7 +194,7 @@ Three shell scripts in `.claude/hooks/` run automatically:
 | `protect-config.sh` | Before Edit/Write | Blocks Claude from editing its own settings or hooks |
 | `format-code.sh` | After Edit/Write | Runs Prettier on `.astro`, `.ts`, `.js`, `.css`, `.json` files |
 
-### Permission Tiers
+### Permissions
 
 Defined in `.claude/settings.json`:
 
@@ -253,16 +212,3 @@ constraints, and known gotchas. This gives Claude the context needed to build
 the right thing on the first pass.
 
 ---
-
-## Project Conventions
-
-- **No build tools beyond Astro** — no Tailwind, no Sass, no PostCSS, no
-  bundler config. Vanilla CSS with custom properties.
-- **No client-side frameworks** — no React, Vue, Svelte. Interactive features
-  use vanilla JS in `<script>` tags within Astro components.
-- **No external runtime dependencies** — everything is static. D3.js is loaded
-  via CDN on the graph page only.
-- **Accessibility first** — skip links, semantic HTML, `aria-current` navigation,
-  `focus-visible` outlines, screen reader utilities, motion preferences.
-- **Self-hosted assets** — fonts are local (no Google Fonts requests), images
-  are WebP with responsive `srcset`.
