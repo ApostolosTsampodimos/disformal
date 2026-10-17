@@ -1,0 +1,30 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import Cover from './Cover.astro';
+import { AUTHOR } from '../../site.config.mjs';
+import { layerForTag } from '../lib/layers.js';
+import { longDate, readMinutes, tagLabel } from '../lib/format.js';
+
+interface Props {
+  post: CollectionEntry<'posts'>;
+  level?: 2 | 3;
+}
+const { post, level = 3 } = Astro.props;
+const { title, tags, image, date, excerpt, subtitle, type } = post.data;
+const author = post.data.author ?? AUTHOR;
+const blurb = excerpt ?? subtitle;
+const url = `/blog/${post.id}/`;
+const Heading = level === 2 ? 'h2' : 'h3';
+---
+<article class="feature">
+  <a class="feature__cover" href={url} tabindex="-1" aria-hidden="true"><Cover seed={post.id} tags={tags} image={image} /></a>
+  <div class="feature__plate" style={`--plate:var(--${layerForTag(tags[0] ?? '')})`}>
+    {tags.length > 0 && <p class="label">{tags.map(tagLabel).join(' × ')}</p>}
+    <Heading class="feature__title"><a href={url}>{title}</a></Heading>
+    {author && <p class="feature__by">By {author}</p>}
+    {blurb && <hr />}
+    {blurb && <p class="feature__excerpt">{blurb}</p>}
+    <hr />
+    <p class="label feature__meta"><span>{longDate(date)}</span><span>{type === 'note' ? 'Note' : 'Essay'} · {readMinutes(post.body)} min</span></p>
+  </div>
+</article>

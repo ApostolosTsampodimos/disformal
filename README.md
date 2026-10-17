@@ -9,9 +9,9 @@ disformal.com
 ```
 disformal website/
 │
-├── site/                         Hero landing page
-├── blog/                         Digital garden (posts, tags, series, link graph)
-├── mission/                      Manifesto + downloadable PDF
+├── site/                         The website: landing, /blog, /mission, /common-room
+├── blog/                         Retired: merged into site/ (safe to delete)
+├── mission/                      Retired: merged into site/ (safe to delete)
 │
 ├── CLAUDE.md                     Rules for AI-assisted development
 ├── FEATURE_REQUEST.md            Template for planning new features
@@ -25,8 +25,8 @@ disformal website/
         └── format-code.sh        Auto-formats source files after edits
 ```
 
-All (sub-)domains are contained in the Astro app with their own `node_modules`,
-`package.json`, and build output. They share `site.config.mjs`.
+Everything is one Astro project in `site/`, deployed to disformal.com. Pages link
+to each other with relative paths, so `npm run dev` serves the whole site locally.
 
 ---
 
@@ -35,8 +35,7 @@ All (sub-)domains are contained in the Astro app with their own `node_modules`,
 **Requirements:** Node.js >= 22.12
 
 ```bash
-# Pick any sub-project
-cd site/          # or blog/ or mission/
+cd site/
 npm install
 npm run dev       # starts dev server with hot reload
 ```
@@ -51,43 +50,32 @@ npm run preview   # preview the build locally
 
 ## Current website structure
 
-### site/ — Hero Landing Page
-
 ```
 site/src/
 ├── pages/
-│   ├── index.astro     Full-screen hero with responsive images
+│   ├── index.astro            Landing: spectral cube, pace layers, featured essay, timeline
+│   ├── common-room.astro      The Discord: rooms, rituals, wagers, code + join
+│   ├── mission.astro          Renders src/mission.md + PDF link
+│   ├── blog/
+│   │   ├── index.astro        Featured essay + every post, by year
+│   │   ├── [slug].astro       Essay (reading progress, citation, linked posts)
+│   │   ├── archive.astro      Posts grouped by year
+│   │   ├── graph.astro        D3.js force-directed link graph
+│   │   ├── rss.xml.js         RSS feed
+│   │   └── tags/              Tag index + one page per tag
 │   └── 404.astro
-├── layouts/
-│   └── Base.astro      Shell: meta tags, header, footer, view transitions
-└── styles/
-    └── global.css      Design system + hero animation
+├── layouts/Base.astro         Header (clock, Void/Folio switch), footer, motion
+├── components/                Wave, Signature, Cover, FeaturedEssay, PostRow
+├── lib/                       layers.js (pace layers), links.ts (link graph), format, random
+├── scripts/cube.js            The 3D cube
+├── content/posts/             Markdown files = blog posts
+├── mission.md                 The mission text (edit this)
+└── styles/global.css          Design system + all page styles
 ```
 
 ### Blog
 
-```
-blog/src/
-├── pages/
-│   ├── index.astro         Paginated post list (20/page)
-│   ├── [slug].astro        Individual post (progress bar, actions, linked posts)
-│   ├── [...page].astro     Pagination routes
-│   ├── archive.astro       Posts grouped by year
-│   ├── graph.astro         Interactive D3.js force-directed link graph
-│   ├── rss.xml.js          Atom/RSS feed
-│   ├── tags/index.astro    Tag cloud with counts
-│   └── tags/[tag].astro    Posts filtered by tag
-├── layouts/
-│   └── Base.astro          Shell with social footer
-├── lib/
-│   └── links.ts            Extracts internal links, builds bidirectional graph
-├── content/
-│   └── posts/              Markdown files = blog posts
-└── styles/
-    └── global.css          Blog-specific components on top of design system
-```
-
-**Writing a post:** Drop a `.md` file in `blog/src/content/posts/`. The filename
+**Writing a post:** Drop a `.md` file in `site/src/content/posts/`. The filename
 becomes the URL slug.
 
 ```yaml
@@ -107,42 +95,28 @@ lastRevised: 2026-10-13           # optional, shown if set
 Body text in Markdown.
 ```
 
-**Connecting posts:** Link to another post with `[text](/other-post/)`. The
+**Connecting posts:** Link to another post with `[text](/blog/other-post/)`. The
 link graph page visualizes these connections, and each post shows "Linked from"
 and "Links to" sections automatically.
 
 ### Mission
 
-Statement of purpose 
-
-```
-mission/src/
-├── pages/
-│   ├── index.astro     Renders description.md + PDF link
-│   └── 404.astro
-├── layouts/
-│   └── Base.astro      Shell with social footer
-├── description.md      The mission text (edit this)
-└── styles/
-    └── global.css      Article + document section styles
-```
-
-**Updating the mission:** Edit `mission/src/description.md`. To add the PDF,
-place `document.pdf` in `mission/public/` — the download link appears
-automatically with file size.
+**Updating the mission:** Edit `site/src/mission.md`. To add the PDF, place
+`document.pdf` in `site/public/`; the download link appears automatically with
+its file size.
 
 ---
 
 ## Shared Configuration
 
-`site.config.mjs` lives in each sub-project root and must be identical across
-all three. It controls:
+`site/site.config.mjs` controls:
 
 | Field | Purpose |
 |---|---|
 | `SITE_NAME` | Displayed in header and meta tags |
 | `TAGLINE` | Optional subtitle on the hero page |
-| `MAIN_URL`, `BLOG_URL`, `MISSION_URL` | Cross-site navigation links |
+| `MAIN_URL` | Production domain, used for the sitemap, RSS and citations (page links are relative) |
+| `DISCORD_URL` | Invite link behind the Common Room join button |
 | `AUTHOR` | Default byline on blog posts |
 | `SOCIAL` | Footer links (GitHub and Substack show as icons; others as text) |
 | `NEWSLETTER_URL` | Enables newsletter signup form on posts |
@@ -152,8 +126,11 @@ all three. It controls:
 
 ## Design System
 
-All sites share the same visual language (currently) as seen in each project's
-`global.css`:
+Tokens live in `site/src/styles/global.css`. There are two registers: **Void**
+(dark, the default) and **Folio** (light paper, the default on essays and the
+mission). A visitor's own choice in the header always wins. The four pace layers
+each have a colour: Space `#ff8a73`, Academia `#f0c05a`, Science `#6fd9b0`,
+AI `#7cb4ff` (darker versions in Folio). The Void values:
 
 | Token | Value | Usage |
 |---|---|---|
@@ -168,7 +145,7 @@ All sites share the same visual language (currently) as seen in each project's
 - **Newsreader** — serif, used for body text and headings
 - **DM Mono** — monospace, used for code and technical elements
 
-**Motion:** Hero uses a Ken Burns pan effect. Mission page uses intersection-observer scroll reveals. Blog uses CSS scroll-driven reading progress.
+**Motion:** The landing cube scrambles and solves itself (visitors can twist and solve it). Sections reveal on scroll, and the four layer waves travel at speeds that match their pace. Every animation stops under `prefers-reduced-motion`.
 
 ---
 
@@ -178,7 +155,7 @@ All sites share the same visual language (currently) as seen in each project's
 
 The root `CLAUDE.md` file is automatically loaded by Claude Code at the start
 of every session. It defines:
-- **Hard rules** — git safety, package management, the three-project sync rule,
+- **Hard rules** — git safety, package management, the one-site rule,
   content protection, static site constraints
 - **Epistemic rules** — when to stop and ask vs. proceed
 - **Tech stack reference** — so Claude doesn't suggest incompatible tools

@@ -1,0 +1,90 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import { buildLinkGraph } from '../../lib/links';
+import { layerForTag } from '../../lib/layers.js';
+
+const posts = await getCollection('posts');
+const { linksTo } = buildLinkGraph(posts);
+const nodes = posts.map((p) => ({ id: p.id, title: p.data.title, layer: layerForTag(p.data.tags[0] ?? '') }));
+const edges: { source: string; target: string }[] = [];
+linksTo.forEach((targets, source) => targets.forEach((t) => edges.push({ source, target: t.id })));
+---
+<Base title="Link graph" description="How Disformal essays link to one another.">
+  <main id="main" class="wrap page-head">
+    <div class="section-head">
+      <div class="section-head__main">
+        <p class="label reveal"><a href="/blog/">Essays</a> / Link graph</p>
+        <h1 class="h-page reveal" style="--d:1">The <em>link graph.</em></h1>
+      </div>
+      <p class="section-head__aside reveal" style="--d:2">Every essay is a node; every link between essays is an edge. Colour follows the essay’s pace layer. Click a node to open it, drag to rearrange, scroll to zoom.</p>
+    </div>
+    <div class="graph crop reveal" style="--d:3" data-graph={JSON.stringify({ nodes, edges })}></div>
+  </main>
+</Base>
+
+<script>
+  let simulation;
+  document.addEventListener('astro:page-load', async () => {
+    const container = document.querySelector('[data-graph]');
+    if (!container) return;
+    // Loaded on demand so a slow CDN never holds up the rest of the page.
+    const d3 = await import(/* @vite-ignore */ 'https://cdn.jsdelivr.net/npm/d3@7/+esm');
+    const { nodes, edges } = JSON.parse(container.dataset.graph);
+    const W = container.clientWidth;
+    const H = container.clientHeight;
+    const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const svg = d3.select(container).append('svg').attr('viewBox', `0 0 ${W} ${H}`).attr('role', 'img').attr('aria-label', 'Graph of links between essays');
+    const g = svg.append('g');
+    svg.call(d3.zoom().scaleExtent([0.3, 4]).on('zoom', (event) => g.attr('transform', event.transform)));
+
+    simulation = d3
+      .forceSimulation(nodes)
+      .force('link', d3.forceLink(edges).id((d) => d.id).distance(120))
+      .force('charge', d3.forceManyBody().strength(-280))
+      .force('center', d3.forceCenter(W / 2, H / 2))
+      .force('collision', d3.forceCollide(36));
+
+    const link = g.append('g').selectAll('line').data(edges).join('line').attr('class', 'graph__edge');
+    const node = g
+      .append('g')
+      .selectAll('a')
+      .data(nodes)
+      .join('a')
+      .attr('href', (d) => `/blog/${d.id}/`)
+      .attr('class', 'graph__node')
+      .style('--c', (d) => `var(--${d.layer})`)
+      .call(
+        d3
+          .drag()
+          .on('start', (event, d) => {
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            d.fx = d.x;
+            d.fy = d.y;
+          })
+          .on('drag', (event, d) => {
+            d.fx = event.x;
+            d.fy = event.y;
+          })
+          .on('end', (event, d) => {
+            if (!event.active) simulation.alphaTarget(0);
+            d.fx = null;
+            d.fy = null;
+          }),
+      );
+    node.append('circle').attr('r', 9);
+    node.append('text').attr('x', 15).attr('y', 4).text((d) => (d.title.length > 28 ? d.title.slice(0, 28) + '…' : d.title));
+
+    const draw = () => {
+      link.attr('x1', (d) => d.source.x).attr('y1', (d) => d.source.y).attr('x2', (d) => d.target.x).attr('y2', (d) => d.target.y);
+      node.attr('transform', (d) => `translate(${d.x},${d.y})`);
+    };
+    if (still) {
+      simulation.stop().tick(300);
+      draw();
+    }
+    simulation.on('tick', draw);
+  });
+  document.addEventListener('astro:before-swap', () => simulation?.stop());
+</script>

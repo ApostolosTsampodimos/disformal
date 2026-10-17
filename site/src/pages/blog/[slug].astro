@@ -1,0 +1,160 @@
+---
+import fs from 'node:fs';
+import path from 'node:path';
+import { getCollection, render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import Signature from '../../components/Signature.astro';
+import PostRow from '../../components/PostRow.astro';
+import { AUTHOR, MAIN_URL, SITE_NAME } from '../../../site.config.mjs';
+import { buildLinkGraph } from '../../lib/links';
+import { layerForTag } from '../../lib/layers.js';
+import { longDate, readMinutes, tagLabel } from '../../lib/format.js';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('posts');
+  const { linksTo, linkedFrom } = buildLinkGraph(posts);
+  return posts.map((post) => ({
+    params: { slug: post.id },
+    props: { post, linksTo: linksTo.get(post.id)!, linkedFrom: linkedFrom.get(post.id)! },
+  }));
+}
+
+const { post, linksTo, linkedFrom } = Astro.props;
+const { Content } = await render(post);
+const { title, subtitle, excerpt, date, tags, image, lastRevised, type } = post.data;
+const author = post.data.author ?? AUTHOR;
+const authors = author ? author.split(/\s*&\s*|\s+and\s+/) : [];
+const bands = [...new Set(tags.map(layerForTag))];
+if (bands.length === 0) bands.push('accent');
+const hasImage = image && (!image.startsWith('/') || fs.existsSync(path.join(process.cwd(), 'public', image)));
+
+// Recommended reading: connected posts first, then the most recent.
+const connected = [...linkedFrom, ...linksTo];
+const connectedIds = new Set(connected.map((p) => p.id));
+const allPosts = (await getCollection('posts')).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+const recent = allPosts.filter((p) => p.id !== post.id && !connectedIds.has(p.id));
+const recommended = [...connected, ...recent].slice(0, 3);
+
+const url = `${MAIN_URL}/blog/${post.id}/`;
+const surnameFirst = (name: string) => {
+  const parts = name.trim().split(/\s+/);
+  return parts.length > 1 ? `${parts.at(-1)}, ${parts.slice(0, -1).join(' ')}` : name;
+};
+const bibtex = [
+  `@misc{disformal-${post.id},`,
+  `  title  = {${title}},`,
+  authors.length > 0 && `  author = {${authors.map(surnameFirst).join(' and ')}},`,
+  `  year   = {${date.getUTCFullYear()}},`,
+  `  note   = {${SITE_NAME}},`,
+  `  url    = {${url}}`,
+  '}',
+].filter(Boolean).join('\n');
+---
+<Base title={title} description={subtitle ?? excerpt} article register="folio">
+  <script slot="head" type="application/ld+json" set:html={JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: title,
+    datePublished: date.toISOString(),
+    dateModified: (lastRevised ?? date).toISOString(),
+    author: { '@type': 'Person', name: author || SITE_NAME },
+    publisher: { '@type': 'Organization', name: SITE_NAME },
+  })} />
+  <div class="essay-progress" aria-hidden="true" style={`--c:var(--${bands[0]})`}></div>
+  <main id="main">
+    <article class="wrap essay" style={`--c:var(--${bands[0]})`}>
+      <header class="essay__head">
+        <nav class="label essay__crumbs" aria-label="Breadcrumb">
+          <a href="/blog/">Essays</a>
+          {tags.map((t) => <><span aria-hidden="true">/</span><a href={`/blog/tags/${t}/`} style={`color:var(--${layerForTag(t)})`}>{tagLabel(t)}</a></>)}
+        </nav>
+        <p class="label essay__meta">
+          <span>{type === 'note' ? 'Note' : 'Essay'}</span>
+          <span aria-hidden="true">·</span>
+          <time datetime={date.toISOString()}>{longDate(date)}</time>
+          <span aria-hidden="true">·</span>
+          <span>{readMinutes(post.body)} min read</span>
+          {lastRevised && <span>· Revised {longDate(lastRevised)}</span>}
+        </p>
+        <h1 class="essay__title split">
+          {title.split(' ').map((word, i) => <><span class="w"><span style={`--i:${i}`}>{word}</span></span>{' '}</>)}
+        </h1>
+        {(subtitle ?? excerpt) && <p class="essay__dek reveal" style="--d:3">{subtitle ?? excerpt}</p>}
+        <div class="essay__byline reveal" style="--d:4">
+          {authors.length > 0 && (
+            <div class="essay__authors">
+              {authors.map((a) => <p class="essay__author"><span>{a}</span><Signature name={a} bands={bands} /></p>)}
+            </div>
+          )}
+          <div class="essay__actions">
+            <a class="btn btn--primary" href="/common-room/">Discuss in the Common Room</a>
+            <a class="btn btn--ghost" href="#cite">Cite</a>
+            <a class="btn btn--ghost" href="/blog/graph/">In the graph</a>
+          </div>
+        </div>
+      </header>
+
+      {hasImage && <figure class="essay__hero crop"><img src={image} alt="" /></figure>}
+
+      <div class="prose">
+        <Content />
+      </div>
+
+      <div class="essay__end">
+        <section class="essay-card spot" aria-labelledby="discuss-title">
+          <p class="label essay-card__kicker">The argument continues</p>
+          <h2 id="discuss-title" class="essay-card__title">Take it to the Common Room</h2>
+          <p class="essay-card__text">Every essay opens a thread on our Discord. The authors answer there; disagreements that survive get a follow-up essay.</p>
+          <a class="btn btn--primary" href="/common-room/">Join the thread <svg class="btn__arrow" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 8h11M9 4l4 4-4 4" /></svg></a>
+        </section>
+        <section id="cite" class="essay-card" aria-labelledby="cite-title">
+          <div class="essay-card__top">
+            <h2 id="cite-title" class="label">Cite this essay</h2>
+            <button class="twist" type="button" data-copy-cite>Copy BibTeX</button>
+          </div>
+          <pre class="cite" data-cite>{bibtex}</pre>
+        </section>
+      </div>
+
+      {recommended.length > 0 && (
+        <section class="keep-reading" aria-labelledby="keep-title">
+          <h2 id="keep-title" class="label">Keep reading</h2>
+          {recommended.map((p) => <PostRow post={p} level={3} />)}
+        </section>
+      )}
+    </article>
+  </main>
+</Base>
+
+<script>
+  let cleanup;
+  document.addEventListener('astro:page-load', () => {
+    const essay = document.querySelector('.essay');
+    const bar = document.querySelector('.essay-progress');
+    if (!essay || !bar) return;
+
+    const onScroll = () => {
+      const r = essay.getBoundingClientRect();
+      const p = Math.min(1, Math.max(0, -r.top / Math.max(1, r.height - innerHeight)));
+      bar.style.setProperty('--p', p.toFixed(4));
+    };
+    onScroll();
+    addEventListener('scroll', onScroll, { passive: true });
+    cleanup = () => removeEventListener('scroll', onScroll);
+
+    const copy = (btn, text, label) => {
+      navigator.clipboard.writeText(text).then(() => {
+        btn.textContent = 'Copied';
+        setTimeout(() => (btn.textContent = label), 2000);
+      });
+    };
+    document.querySelectorAll('.prose pre').forEach((pre) => {
+      const btn = Object.assign(document.createElement('button'), { className: 'copy-code-btn', type: 'button', textContent: 'Copy' });
+      btn.addEventListener('click', () => copy(btn, pre.querySelector('code')?.textContent ?? '', 'Copy'));
+      pre.appendChild(btn);
+    });
+    const citeBtn = document.querySelector('[data-copy-cite]');
+    citeBtn?.addEventListener('click', () => copy(citeBtn, document.querySelector('[data-cite]').textContent, 'Copy BibTeX'));
+  });
+  document.addEventListener('astro:before-swap', () => cleanup?.());
+</script>

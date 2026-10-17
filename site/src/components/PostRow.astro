@@ -1,0 +1,29 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import { layerForTag } from '../lib/layers.js';
+import { longDate, tagLabel } from '../lib/format.js';
+
+interface Props {
+  post: CollectionEntry<'posts'>;
+  level?: 2 | 3;
+}
+const { post, level = 2 } = Astro.props;
+const { title, tags, date, excerpt, subtitle, state } = post.data;
+const blurb = excerpt ?? subtitle;
+const Heading = level === 2 ? 'h2' : 'h3';
+---
+<article class="post-row spot reveal" style={`--c:var(--${layerForTag(tags[0] ?? '')})`}>
+  <p class="label post-row__date">
+    <time datetime={date.toISOString()}>{longDate(date)}</time>
+    {state && <span class="post-row__state">{state}</span>}
+  </p>
+  <div class="post-row__main">
+    <Heading class="post-row__title"><a href={`/blog/${post.id}/`}>{title}</a></Heading>
+    {blurb && <p class="post-row__excerpt">{blurb}</p>}
+  </div>
+  {tags.length > 0 && (
+    <p class="post-row__tags">
+      {tags.map((t) => <a class="tag" href={`/blog/tags/${t}/`} style={`--c:var(--${layerForTag(t)})`}>{tagLabel(t)}</a>)}
+    </p>
+  )}
+</article>
