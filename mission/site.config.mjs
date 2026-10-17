@@ -10,6 +10,7 @@ export const GISCUS_REPO_ID = '';
 export const GISCUS_CATEGORY_ID = '';
 
 export const NEWSLETTER_URL = '';  // e.g. 'https://buttondown.email/yourname/subscribe'
+export const DISCORD_URL = '';     // e.g. 'https://discord.gg/yourinvite' — the Common Room join button
 
 // Your domains.
 export const MAIN_URL = 'https://disformal.com';

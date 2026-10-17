@@ -1,34 +1,242 @@
 ---
 import Base from '../layouts/Base.astro';
-import { SITE_NAME, TAGLINE } from '../../site.config.mjs';
+import { getCollection } from 'astro:content';
+import Wave from '../components/Wave.astro';
+import FeaturedEssay from '../components/FeaturedEssay.astro';
+import { LAYERS, wavePath } from '../lib/layers.js';
 
-// The photo is cropped to fill the screen, so on narrow screens it is displayed much wider
-// than the viewport. `sizes` tells the browser that, so phones fetch the large file.
-const sizes = 'max(100vw, 140vh)';
+// ----- the spectral cube: 27 cubies, a few faces lit in the layer colours -----
+const R = [-1, 0, 1];
+const cubies = R.flatMap((x) => R.flatMap((y) => R.map((z) => ({ x, y, z }))));
+const FACES = ['px', 'nx', 'py', 'ny', 'pz', 'nz'];
+const outer = { px: (c) => c.x === 1, nx: (c) => c.x === -1, py: (c) => c.y === 1, ny: (c) => c.y === -1, pz: (c) => c.z === 1, nz: (c) => c.z === -1 };
+const LIT = {
+  'pz:1,-1,1': 'ai', 'pz:-1,0,1': 'ai',
+  'px:1,0,-1': 'space', 'px:1,1,1': 'space',
+  'ny:0,-1,0': 'accent', 'ny:-1,-1,-1': 'accent',
+  'nx:-1,-1,0': 'sci', 'nx:-1,1,-1': 'sci',
+  'nz:0,0,-1': 'acad', 'nz:1,1,-1': 'acad',
+  'py:1,1,0': 'text',
+};
+
+// ----- rays leaving the cube, slowest (longest wavelength) on top -----
+const CENTER = [260, 300];
+const ENDS = { space: 170, acad: 260, sci: 350, ai: 440 };
+const rays = [...LAYERS].reverse().map((l) => {
+  const dx = 600 - CENTER[0];
+  const dy = ENDS[l.id] - CENTER[1];
+  const length = Math.hypot(dx, dy);
+  return { ...l, y: ENDS[l.id], angle: ((Math.atan2(dy, dx) * 180) / Math.PI).toFixed(2), d: wavePath(l.lambda, l.amp, -l.lambda, length + 2) };
+});
+
+const posts = (await getCollection('posts')).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+const featured = posts.find((p) => p.data.featured) ?? posts[0];
+
+// ----- the long now of formal knowledge, on a logarithmic ruler -----
+const NOW = 2026;
+// Within a cluster the leftmost event hangs deepest, so no leader line crosses a label.
+const EVENTS = [
+  { year: 1088, band: 'acad', row: 4, who: 'University of Bologna' },
+  { year: 1543, band: 'space', row: 3, who: 'Copernicus, ', work: 'De revolutionibus' },
+  { year: 1610, band: 'space', row: 2, who: 'Galileo, ', work: 'Sidereus Nuncius' },
+  { year: 1665, band: 'acad', row: 1, work: 'Philosophical Transactions' },
+  { year: 1687, band: 'sci', row: 0, who: 'Newton, ', work: 'Principia' },
+  { year: 1859, band: 'sci', row: 4, who: 'Darwin, ', work: 'Origin of Species' },
+  { year: 1905, band: 'sci', row: 3, who: 'Einstein’s miracle year' },
+  { year: 1950, band: 'ai', row: 2, who: 'The Turing test' },
+  { year: 1957, band: 'space', row: 1, who: 'Sputnik 1' },
+  { year: 1969, band: 'space', row: 0, who: 'Apollo 11' },
+  { year: 1991, band: 'acad', row: 1, who: 'arXiv opens' },
+  { year: 2017, band: 'ai', row: 1, who: '“Attention Is All You Need”' },
+  { year: 2021, band: 'space', row: 0, who: 'JWST launches' },
+  { year: 2024, band: 'ai', row: 0, who: 'Nobel prizes for AI research' },
+].map((e) => ({ ...e, x: (((3 - Math.log10(NOW - e.year + 1)) / 3) * 100).toFixed(1), len: 22 + e.row * 50 }));
+const TICKS = [
+  { x: 0, html: '10<sup>3</sup> yr ago' },
+  { x: 33.2, html: '10<sup>2</sup>' },
+  { x: 65.3, html: '10' },
+  { x: 90, html: '1' },
+];
 ---
-<Base hero>
-  <link
-    slot="head"
-    rel="preload"
-    as="image"
-    href="/assets/hero-2560.webp"
-    imagesrcset="/assets/hero-1280.webp 1280w, /assets/hero-2560.webp 2560w"
-    imagesizes={sizes}
-    fetchpriority="high"
-  />
+<Base description="Disformal is a common room for academia, space, science and AI: essays that show their working, and a Discord built for argument.">
   <main id="main">
-    <h1 class="screen-reader-text">{SITE_NAME}</h1>
-    <figure class="hero">
-      <img
-        src="/assets/hero-2560.webp"
-        srcset="/assets/hero-1280.webp 1280w, /assets/hero-2560.webp 2560w"
-        sizes={sizes}
-        width="2560"
-        height="1709"
-        alt=""
-        fetchpriority="high"
-      />
-      {TAGLINE && <figcaption class="hero-tagline">{TAGLINE}</figcaption>}
-    </figure>
+    <section class="wrap hero" aria-labelledby="hero-title">
+      <div class="hero__copy">
+        <p class="label reveal">A society for academia · space · science · AI</p>
+        <h1 id="hero-title" class="hero__title split">
+          <span class="w"><span style="--i:0">Rigor,</span></span>{' '}
+          <span class="w"><span style="--i:1"><em>without</em></span></span>{' '}
+          <span class="w"><span style="--i:2">the</span></span>{' '}
+          <span class="w"><span style="--i:3">ritual.</span></span>
+        </h1>
+        <p class="hero__lede reveal" style="--d:3">Disformal is a common room for people who think in papers and talk like people: researchers, engineers, students and the stubbornly curious.</p>
+        <div class="hero__actions reveal" style="--d:5">
+          <a class="btn btn--primary" href="/common-room/">Enter the Common Room <svg class="btn__arrow" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 8h11M9 4l4 4-4 4" /></svg></a>
+          <a class="btn btn--ghost" href="/blog/">Read the essays</a>
+        </div>
+      </div>
+
+      <div class="refractor reveal" style="--d:2" data-cube>
+        <div class="refractor__light" aria-hidden="true"></div>
+        <svg class="refractor__rays" viewBox="0 0 640 600" aria-hidden="true">
+          <path class="beam beam--glow" d="M-40,60 L260,300" />
+          <path class="beam beam--core" d="M-40,60 L260,300" />
+          <path class="beam beam--flow" d="M-40,60 L260,300" />
+          <clipPath id="ray-clip"><rect x="0" y="0" width="600" height="600" /></clipPath>
+          <g clip-path="url(#ray-clip)">
+            {rays.map((r) => (
+              <g class="ray" transform={`translate(${CENTER[0]} ${CENTER[1]}) rotate(${r.angle})`} style={`--c:var(--${r.id});--lambda:${r.lambda}px;--dur:${r.dur}s`}>
+                <path d={r.d} />
+              </g>
+            ))}
+          </g>
+          {rays.map((r) => <circle class="ray-end" cx="600" cy={r.y} r="3.5" style={`--c:var(--${r.id})`} />)}
+        </svg>
+        {rays.map((r) => (
+          <p class:list={['ray-label', { 'ray-label--below': r.y > CENTER[1] }]} style={`top:${((r.y / 600) * 100).toFixed(2)}%;--c:var(--${r.id})`}>
+            <b>{r.name}</b><span>τ ≈ 10<sup>{r.exp}</sup> yr</span>
+          </p>
+        ))}
+        <div class="cube-shadow" aria-hidden="true"></div>
+        <div class="cube-anchor" role="img" aria-label="A glass puzzle cube that scrambles and solves itself while a beam of light splits into four coloured waves, one per pace layer.">
+          <div class="cube-float">
+            <div class="cube">
+              {cubies.map((c) => (
+                <div class="cubie" data-x={c.x} data-y={c.y} data-z={c.z} style={`--x:${c.x};--y:${c.y};--z:${c.z}`}>
+                  {FACES.map((f) => {
+                    const out = outer[f](c);
+                    const lit = LIT[`${f}:${c.x},${c.y},${c.z}`];
+                    return <span class:list={['face', `face--${f}`, { 'face--out': out, 'face--lit': lit }]} data-f={out ? f : undefined} style={lit ? `--c:var(--${lit})` : undefined} />;
+                  })}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div class="refractor__foot">
+          <p class="readout"><span class="readout__state" data-state>Solved</span><span class="readout__moves" data-moves aria-hidden="true"></span></p>
+          <div class="cube-controls">
+            <button class="twist" type="button" data-twist>
+              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9M13.5 2.5v3h-3" /></svg>
+              Twist
+            </button>
+            <button class="twist" type="button" data-solve disabled>
+              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 8a5.5 5.5 0 1 0 1.6-3.9M2.5 2.5v3h3" /></svg>
+              Solve
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="layers" aria-labelledby="layers-title">
+      <div class="wrap section__in">
+        <div class="section-head">
+          <div class="section-head__main">
+            <p class="label reveal">The four pace layers</p>
+            <h2 id="layers-title" class="h-section reveal" style="--d:1">Four layers, <em>four clocks.</em></h2>
+          </div>
+          <div class="section-head__aside reveal" style="--d:2">
+            <p class="quote">“Fast learns, slow remembers.”</p>
+            <p>We borrow Stewart Brand’s pace layers and sort our conversations by how fast their subject changes. AI moves in months, the universe in eons. The best arguments cross layers.</p>
+          </div>
+        </div>
+        <p class="label pace-marker">↑ Fast — learns</p>
+        {LAYERS.map((l, i) => (
+          <div class="layer-row reveal" style={`--c:var(--${l.id});--d:${i}`}>
+            <Wave layer={l} />
+            <h3 class="layer-row__name">{l.name}</h3>
+            <p class="layer-row__tau"><span class="tau">τ</span> ≈ {l.tau}</p>
+            <p class="layer-row__blurb">{l.blurb}</p>
+            <div class="layer-row__rooms">
+              {l.rooms.map((r) => <a href="/common-room/#rooms">#{r.name}</a>)}
+            </div>
+          </div>
+        ))}
+        <p class="label pace-marker pace-marker--end">↓ Slow — remembers</p>
+      </div>
+    </section>
+
+    <section class="section" id="essays" aria-labelledby="essays-title">
+      <div class="wrap section__in">
+        <div class="section-head">
+          <div class="section-head__main">
+            <p class="label reveal">From the garden</p>
+            <h2 id="essays-title" class="h-section reveal" style="--d:1">Essays, <em>with the working shown.</em></h2>
+          </div>
+          <nav class="site-nav reveal" style="--d:2" aria-label="Essay indexes">
+            <a href="/blog/">All essays</a>
+            <a href="/blog/graph/">Link graph</a>
+            <a href="/blog/rss.xml">RSS</a>
+          </nav>
+        </div>
+
+        {featured && <FeaturedEssay post={featured} />}
+      </div>
+    </section>
+
+    <section class="section section--raise" id="room" aria-labelledby="room-title">
+      <div class="wrap section__in split-2">
+        <div>
+          <p class="label reveal">The Common Room</p>
+          <h2 id="room-title" class="h-section h-section--gap reveal" style="--d:1">Read it here. <em>Argue it there.</em></h2>
+          <p class="lead reveal" style="--d:2">Each essay opens a thread on our Discord. Each week has a journal club and a seminar. Anyone curious can take a seat; everyone is asked to show their working.</p>
+          <a class="btn btn--primary reveal" style="--d:3" href="/common-room/">Take a seat <svg class="btn__arrow" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 8h11M9 4l4 4-4 4" /></svg></a>
+        </div>
+        <div>
+          <p class="label reveal">Rituals</p>
+          <div class="ritual reveal" style="--d:1"><span class="label">Weekly</span><div><p class="ritual__name">Journal Club</p><p class="ritual__blurb">One paper, read before, argued after.</p></div></div>
+          <div class="ritual reveal" style="--d:2"><span class="label">Fortnightly</span><div><p class="ritual__name">Seminar</p><p class="ritual__blurb">A member presents unfinished work, on purpose.</p></div></div>
+          <div class="ritual reveal" style="--d:3"><span class="label">Every essay</span><div><p class="ritual__name">Essay threads</p><p class="ritual__blurb">Each essay opens a thread; its authors answer there.</p></div></div>
+          <div class="ritual reveal" style="--d:4"><span class="label">Always open</span><div><p class="ritual__name">Wagers</p><p class="ritual__blurb">Long-dated predictions, resolved in five-digit years.</p></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="long-now" aria-labelledby="ruler-title">
+      <div class="wrap section__in">
+        <div class="section-head">
+          <div class="section-head__main">
+            <p class="label reveal">The long now of formal knowledge</p>
+            <h2 id="ruler-title" class="h-section reveal" style="--d:1">Nine hundred years <em>of formalities.</em></h2>
+          </div>
+          <p class="section-head__aside reveal" style="--d:2">From the first university to the forty-thousand-paper month. A logarithmic ruler: each major tick is ten times further back.</p>
+        </div>
+        <div class="ruler" role="img" aria-label="Logarithmic timeline from the University of Bologna in 1088 to 40,000 arXiv submissions a month in 2026.">
+          <div class="ruler__track">
+            <div class="ruler__axis"></div>
+            {TICKS.map((t) => <span class="ruler__tick" style={`left:${t.x}%`} set:html={t.html} />)}
+            <span class="ruler__tick ruler__now" style="left:100%">NOW</span>
+            {EVENTS.map((e, i) => (
+              <div class="event" style={`--x:${e.x}%;--c:var(--${e.band});--len:${e.len}px;--i:${i}`}>
+                <span class="event__dot"></span>
+                <span class="event__leader"></span>
+                <p class="event__label"><span class="mono">{String(e.year).padStart(5, '0')}</span>{e.who}{e.work && <em>{e.work}</em>}</p>
+              </div>
+            ))}
+            <div class="event event--end" style={`--x:100%;--c:var(--acad);--len:114px;--i:${EVENTS.length}`}>
+              <span class="event__dot"></span>
+              <span class="event__leader"></span>
+              <p class="event__label"><span class="mono">02026</span><span data-count="40000">40,000</span> arXiv submissions a month</p>
+            </div>
+          </div>
+        </div>
+        <p class="label ruler-note">Colour = pace layer · dates in five digits, for the next 8,000 years · 02026 figure: <a href="https://blog.arxiv.org/2026/10/01/updated-rate-limit-policy/">arXiv blog, 1 Oct 02026</a></p>
+      </div>
+    </section>
   </main>
 </Base>
+
+<script>
+  import { mountCube } from '../scripts/cube.js';
+
+  let destroy;
+  document.addEventListener('astro:page-load', () => {
+    const stage = document.querySelector('[data-cube]');
+    if (stage) destroy = mountCube(stage);
+  });
+  document.addEventListener('astro:before-swap', () => {
+    destroy?.();
+    destroy = undefined;
+  });
+</script>

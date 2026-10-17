@@ -1,0 +1,22 @@
+---
+// A spectral signature: emission lines hashed from a name, coloured by the layers it belongs to.
+import { seeded } from '../lib/random.js';
+
+interface Props {
+  name: string;
+  bands: string[];
+}
+const { name, bands } = Astro.props;
+
+const rand = seeded(name);
+const pick = (list) => list[Math.floor(rand() * list.length)];
+const lines = Array.from({ length: 6 + Math.floor(rand() * 4) }, () => ({
+  left: (4 + rand() * 92).toFixed(1),
+  band: pick(bands),
+  width: pick([1, 1, 2, 3]),
+  opacity: pick([0.55, 0.7, 0.85, 1]),
+}));
+---
+<span class="sig" aria-hidden="true">
+  {lines.map((l) => <span style={`left:${l.left}%;width:${l.width}px;background:var(--${l.band});opacity:${l.opacity}`} />)}
+</span>

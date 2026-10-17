@@ -1,0 +1,30 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../../layouts/Base.astro';
+import { layerForTag } from '../../../lib/layers.js';
+import { tagLabel } from '../../../lib/format.js';
+
+const posts = await getCollection('posts');
+const counts = posts.flatMap((p) => p.data.tags).reduce((acc, tag) => {
+  acc[tag] = (acc[tag] ?? 0) + 1;
+  return acc;
+}, {} as Record<string, number>);
+const tags = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+---
+<Base title="Tags" description="Disformal essays by tag.">
+  <main id="main" class="wrap page-head">
+    <div class="section-head">
+      <div class="section-head__main">
+        <p class="label reveal"><a href="/blog/">Essays</a> / Tags</p>
+        <h1 class="h-page reveal" style="--d:1">Browse <em>by tag.</em></h1>
+      </div>
+    </div>
+    <ul class="tag-cloud reveal" style="--d:2">
+      {tags.map(([tag, count]) => (
+        <li>
+          <a class="tag tag--lg" href={`/blog/tags/${tag}/`} style={`--c:var(--${layerForTag(tag)})`}>{tagLabel(tag)} <span class="tag__count">{count}</span></a>
+        </li>
+      ))}
+    </ul>
+  </main>
+</Base>

@@ -1,0 +1,11 @@
+---
+import { wavePath } from '../lib/layers.js';
+
+interface Props {
+  layer: { id: string; lambda: number; amp: number; dur: number };
+}
+const { layer } = Astro.props;
+---
+<svg class="wave" viewBox="0 0 240 24" aria-hidden="true" style={`--c:var(--${layer.id});--lambda:${layer.lambda}px;--dur:${layer.dur}s`}>
+  <path d={wavePath(layer.lambda, layer.amp, -layer.lambda, 240, 12)} />
+</svg>

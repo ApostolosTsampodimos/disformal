@@ -1,7 +1,8 @@
-# DISFORMAL — Astro Static Site System
+# DISFORMAL — Astro Static Site
 
-Three independent Astro sites sharing a design system: `site/` (hero landing),
-`blog/` (digital garden with link graph), `mission/` (manifesto + PDF).
+One Astro site in `site/`: the landing page, `/blog` (digital garden with link
+graph), `/mission` (manifesto + PDF) and `/common-room` (the Discord). The old
+`blog/` and `mission/` projects are retired and kept only until they are deleted.
 Solo build: Apostolos + Claude Code.
 
 ---
@@ -20,10 +21,9 @@ Solo build: Apostolos + Claude Code.
 - Never add dependencies without asking — these are minimal static sites
 - Never modify `package-lock.json` manually
 
-**Three-project rule:**
-- `site.config.mjs` must stay identical across all three projects
-- If you change it in one, change it in the other two
-- Each project builds independently — never create cross-project imports
+**One-site rule:**
+- Everything ships from `site/`; never add features to the retired `blog/` or `mission/`
+- Links between pages are relative (`/blog/`, `/mission/`); `MAIN_URL` is only for absolute URLs (sitemap, RSS, citations)
 
 **Code discipline:**
 - Minimum code that solves the problem — nothing speculative
@@ -34,8 +34,8 @@ Solo build: Apostolos + Claude Code.
 - Do not "improve" adjacent code while fixing something else
 
 **Content is sacred:**
-- Never modify or delete blog posts in `blog/src/content/posts/` unless asked
-- Never modify `mission/src/description.md` unless asked
+- Never modify or delete blog posts in `site/src/content/posts/` unless asked
+- Never modify `site/src/mission.md` unless asked
 - Never modify image assets unless asked
 
 **Static site constraints:**
@@ -66,12 +66,12 @@ instruction. Do not patch around it.
 ## Commands
 
 ```bash
-# Development (run from any sub-project)
+# Development (run from site/)
 npm run dev          # Start dev server with hot reload
 npm run build        # Build to dist/
 npm run preview      # Preview the built site
 
-# Install dependencies (run in each sub-project)
+# Install dependencies (run in site/)
 npm install
 ```
 
@@ -84,7 +84,7 @@ npm install
 - **Fonts:** Self-hosted Newsreader (serif) + DM Mono (monospace)
 - **Transitions:** Astro ClientRouter (view transitions API)
 - **Blog features:** Content Collections, D3.js graph, RSS, reading progress
-- **Deployment:** Static files uploaded to Hostinger via hPanel
+- **Deployment:** Static files (`site/dist/`) uploaded to Hostinger via hPanel
 
 ## Design System
 
@@ -99,30 +99,38 @@ npm install
 --mono:       DM Mono, ui-monospace, Consolas, monospace
 ```
 
+These are the Void (dark, default) values. Folio is the light register, set by
+`:root[data-theme="folio"]` and the default on essays and the mission. The four
+pace layers have colours `--space`, `--acad`, `--sci` and `--ai`; all tokens live in
+`site/src/styles/global.css`.
+
 ---
 
 ## Project Layout
 
 ```
 disformal website/
-├── site/           → hero landing page (MAIN_URL)
-├── blog/           → digital garden with link graph (BLOG_URL)
-├── mission/        → manifesto + PDF download (MISSION_URL)
+├── site/           → the website (MAIN_URL): /, /blog, /mission, /common-room
+├── blog/           → retired, merged into site/
+├── mission/        → retired, merged into site/
 ├── CLAUDE.md       → this file
 ├── FEATURE_REQUEST.md → template for new feature requests
 └── README.md       → contributor onboarding guide
 ```
 
-Each sub-project follows:
+`site/` follows:
 ```
-{project}/
+site/
 ├── src/
-│   ├── pages/          # Astro pages (file-based routing)
+│   ├── pages/          # Astro pages (file-based routing), blog/ for essays
 │   ├── layouts/        # Base.astro wrapper
+│   ├── components/     # Wave, Signature, Cover, FeaturedEssay, PostRow
 │   ├── styles/         # global.css (design system)
-│   ├── content/        # blog only: posts/ collection
-│   └── lib/            # blog only: links.ts (graph logic)
+│   ├── content/posts/  # blog posts collection
+│   ├── lib/            # layers.js, links.ts (graph logic), format, random
+│   ├── scripts/        # cube.js
+│   └── mission.md      # mission text
 ├── public/assets/      # fonts, images, manifest
-├── astro.config.mjs    # per-project Astro config
-└── site.config.mjs     # shared config (keep identical)
+├── astro.config.mjs
+└── site.config.mjs     # site-wide settings
 ```

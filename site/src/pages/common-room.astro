@@ -1,0 +1,256 @@
+---
+import Base from '../layouts/Base.astro';
+import Signature from '../components/Signature.astro';
+import { DISCORD_URL } from '../../site.config.mjs';
+import { LAYERS } from '../lib/layers.js';
+
+const ALL = ['space', 'acad', 'sci', 'ai'];
+const roomHref = DISCORD_URL || '#seat';
+const FOYER = { name: 'foyer', blurb: 'Say what you’re working on, and what you’re stuck on.' };
+const ATRIUM = [
+  { name: 'journal-club', blurb: 'One paper a week. Read before, argued after.' },
+  { name: 'essay-threads', blurb: 'Every Disformal essay gets a thread. The authors answer here.' },
+  { name: 'wagers', blurb: 'Long-dated predictions with a five-digit resolution year.' },
+];
+const roomCount = 1 + LAYERS.reduce((n, l) => n + l.rooms.length, 0) + ATRIUM.length;
+
+const WEEK = [
+  { day: 'Mon', quiet: 'Quiet. Read.' },
+  { day: 'Tue', when: 'Weekly', name: 'Office hours', blurb: 'Open questions, to people who know.' },
+  { day: 'Wed' },
+  { day: 'Thu', when: 'Weekly', name: 'Journal Club', blurb: 'One paper. Read before, argued after.' },
+  { day: 'Fri' },
+  { day: 'Sat' },
+  { day: 'Sun', when: 'Fortnightly', name: 'Seminar', blurb: 'A member presents unfinished work, on purpose.' },
+];
+
+const WAGERS = [
+  { layers: ['acad', 'ai'], resolves: '02031·01·01', claim: 'By the end of 02030, a paper whose sole credited author is an AI system is accepted at a major peer-reviewed venue.' },
+  { layers: ['space', 'sci'], resolves: '02040·01·01', claim: 'Before 02040, rock samples collected on Mars are returned to Earth and opened in a laboratory.' },
+];
+const NAME = Object.fromEntries([...LAYERS.map((l) => [l.id, l.name])]);
+
+const NORMS = [
+  { title: 'Steelman first.', body: 'Restate the strongest version of a view before you argue with it.' },
+  { title: 'Label your epistemics.', body: 'Cite it, or flag it as speculation. Both are welcome; confusing them is not.' },
+  { title: 'Credentials optional.', body: 'No one needs a title to ask a question. No one gets a pass for having one.' },
+  { title: 'Argue with the paper, not the person.', body: 'Critique work, claims and methods. Never people.' },
+];
+---
+<Base title="The Common Room" description="Disformal's Discord: twelve rooms across four pace layers, weekly rituals, long-dated wagers, and one code.">
+  <main id="main">
+    <section class="wrap room-hero" aria-labelledby="room-title">
+      <div>
+        <p class="label reveal">The Common Room · on Discord</p>
+        <h1 id="room-title" class="hero__title split">
+          <span class="w"><span style="--i:0">Where</span></span>{' '}
+          <span class="w"><span style="--i:1">the</span></span>{' '}
+          <span class="w"><span style="--i:2">essays</span></span>{' '}
+          <span class="w"><span style="--i:3"><em>argue</em></span></span>{' '}
+          <span class="w"><span style="--i:4"><em>back.</em></span></span>
+        </h1>
+        <p class="hero__lede reveal" style="--d:3">An informal room with formal standards. Researchers, engineers, students and the stubbornly curious, arguing across four pace layers and citing as they go.</p>
+        <p class="label stats reveal" style="--d:4">
+          <span><b data-count={LAYERS.length}>{LAYERS.length}</b> layers</span><span aria-hidden="true">·</span>
+          <span><b data-count={roomCount}>{roomCount}</b> rooms</span><span aria-hidden="true">·</span>
+          <span><b>One</b> code</span>
+        </p>
+        <div class="hero__actions reveal" style="--d:5">
+          <a class="btn btn--primary" href="#seat">Take a seat <svg class="btn__arrow btn__arrow--down" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v11M4 9l4 4 4-4" /></svg></a>
+          <a class="btn btn--ghost" href="#rooms">Walk the floor plan</a>
+        </div>
+      </div>
+      <figure class="photo reveal" style="--d:2">
+        <div class="photo__frame crop">
+          <img
+            src="/assets/hero-1280.webp"
+            srcset="/assets/hero-1280.webp 1280w, /assets/hero-2560.webp 2560w"
+            sizes="(max-width: 960px) 100vw, 56vw"
+            width="1280"
+            height="854"
+            alt="A tall glass prism standing in a dark room, lit from the side by a violet beam"
+            fetchpriority="high"
+          />
+        </div>
+        <figcaption class="caption">
+          <span class="label">The light source</span>
+          <span class="caption__text">Every room needs one. Ours is a question.</span>
+        </figcaption>
+      </figure>
+    </section>
+
+    <section class="section" id="rooms" aria-labelledby="rooms-title">
+      <div class="wrap section__in">
+        <div class="section-head">
+          <div class="section-head__main">
+            <p class="label reveal">The floor plan</p>
+            <h2 id="rooms-title" class="h-section reveal" style="--d:1">Twelve rooms, <em>sorted by pace.</em></h2>
+          </div>
+          <p class="section-head__aside reveal" style="--d:2">Rooms belong to a layer; the atrium belongs to everyone. Each room’s spectral signature shows which layers it draws light from.</p>
+        </div>
+
+        <div class="floor">
+          <div class="floor__col reveal" style="--c:var(--accent)">
+            <div class="floor__head"><p>Foyer</p><p class="label">Start here</p></div>
+            <a class="room-card spot" href={roomHref}>
+              <span class="room-card__name">#{FOYER.name}</span>
+              <span class="room-card__blurb">{FOYER.blurb}</span>
+              <Signature name={FOYER.name} bands={ALL} />
+            </a>
+          </div>
+          {LAYERS.map((l, i) => (
+            <div class="floor__col reveal" style={`--c:var(--${l.id});--d:${i + 1}`}>
+              <div class="floor__head"><p>{l.name}</p><p class="label"><span class="tau">τ</span> ≈ {l.tau}</p></div>
+              {l.rooms.map((r) => (
+                <a class="room-card spot" href={roomHref}>
+                  <span class="room-card__name">#{r.name}</span>
+                  <span class="room-card__blurb">{r.blurb}</span>
+                  <Signature name={r.name} bands={r.bands ?? [l.id]} />
+                </a>
+              ))}
+            </div>
+          ))}
+        </div>
+
+        <div class="atrium reveal">
+          <div class="atrium__rule" aria-hidden="true">{LAYERS.map((l) => <span style={`background:var(--${l.id})`} />)}</div>
+          <div class="atrium__head"><p>Atrium</p><p class="label">Cross-layer · open to all</p></div>
+          <div class="atrium__rooms">
+            {ATRIUM.map((r) => (
+              <a class="room-card spot" href={r.name === 'wagers' ? '#wagers' : roomHref}>
+                <span class="room-card__name">#{r.name}</span>
+                <span class="room-card__blurb">{r.blurb}</span>
+                <Signature name={r.name} bands={ALL} />
+              </a>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section--raise" id="rituals" aria-labelledby="rituals-title">
+      <div class="wrap section__in">
+        <div class="section-head">
+          <div class="section-head__main">
+            <p class="label reveal">Rituals</p>
+            <h2 id="rituals-title" class="h-section reveal" style="--d:1">A week <em>in the room.</em></h2>
+          </div>
+        </div>
+        <div class="week reveal" style="--d:2">
+          <div class="week__grid">
+            {WEEK.map((d) => (
+              <div class="day">
+                <p class="label">{d.day}</p>
+                {d.quiet && <p class="day__quiet">{d.quiet}</p>}
+                {d.name && (
+                  <div class="session">
+                    <p class="label">{d.when}</p>
+                    <p class="session__name">{d.name}</p>
+                    <p class="session__blurb">{d.blurb}</p>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+        <p class="label week-note">Always on: #essay-threads · #wagers</p>
+      </div>
+    </section>
+
+    <section class="section" id="wagers" aria-labelledby="wagers-title">
+      <div class="wrap section__in">
+        <div class="section-head">
+          <div class="section-head__main">
+            <p class="label reveal">Wagers</p>
+            <h2 id="wagers-title" class="h-section reveal" style="--d:1">Predictions, <em>resolved in five digits.</em></h2>
+          </div>
+          <p class="section-head__aside reveal" style="--d:2">Make a falsifiable claim, set the date it resolves, and let someone take the other side. The room keeps the record, in public, for as long as it takes.</p>
+        </div>
+        <div class="wagers">
+          {WAGERS.map((w, i) => (
+            <article class="wager spot reveal" style={`--d:${i}`}>
+              <div class="wager__top label">
+                <span><span class="wager__flag">Example</span> {w.layers.map((id, j) => <>{j > 0 && ' × '}<span style={`color:var(--${id})`}>{NAME[id]}</span></>)}</span>
+                <span>Resolves {w.resolves}</span>
+              </div>
+              <p class="wager__claim">“{w.claim}”</p>
+              <div class="wager__sides label"><span>For · open</span><span>Against · open</span></div>
+              <a class="btn btn--ghost" href={roomHref}>Take a side</a>
+            </article>
+          ))}
+          <article class="wager wager--template reveal" style="--d:2">
+            <p class="label">Propose a wager</p>
+            <dl>
+              <dt>CLAIM</dt><dd>one falsifiable sentence</dd>
+              <dt>RESOLVES</dt><dd>0YYYY·MM·DD</dd>
+              <dt>LAYERS</dt><dd>one or more</dd>
+              <dt>ARBITER</dt><dd>who decides, and how</dd>
+            </dl>
+            <a class="btn btn--primary" href={roomHref}>Draft in #wagers</a>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section--raise" id="seat" aria-labelledby="code-title">
+      <div class="wrap section__in split-2 split-2--top">
+        <div>
+          <p class="label reveal">Take a seat</p>
+          <h2 id="code-title" class="h-section h-section--gap reveal" style="--d:1">The Code <em>of the Room.</em></h2>
+          <p class="lead reveal" style="--d:2">Four rules, no fine print. Tick each one you will keep; the door opens when all four are ticked.</p>
+          <div class="code-list reveal" style="--d:3">
+            {NORMS.map((n) => (
+              <label class="norm">
+                <input type="checkbox" data-norm />
+                <span class="norm__box" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M3 8.5l3 3 7-7" /></svg></span>
+                <span><span class="norm__title">{n.title}</span><span class="norm__body">{n.body}</span></span>
+              </label>
+            ))}
+          </div>
+        </div>
+        <aside class="seat crop reveal" style="--d:2" aria-labelledby="seat-title" data-seat>
+          <div class="seat__top label"><span>Seat · Common Room</span><span>Discord</span></div>
+          <h3 id="seat-title">Your seat</h3>
+          <Signature name="seat" bands={['accent', ...ALL]} />
+          <div class="seat__ticks" aria-hidden="true">{NORMS.map(() => <span />)}</div>
+          <p class="label seat__status" role="status" data-seat-status>Accept the code to enter</p>
+          <span class="seat__stamp" aria-hidden="true">ADMITTED</span>
+          {DISCORD_URL ? (
+            <a class="btn btn--primary" href={DISCORD_URL} data-seat-enter>Enter on Discord <svg class="btn__arrow" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 8h11M9 4l4 4-4 4" /></svg></a>
+          ) : (
+            <button class="btn" type="button" disabled>Invite link opens soon</button>
+          )}
+          <p class="seat__fine">Leave whenever you like. The essays stay public either way.</p>
+        </aside>
+      </div>
+    </section>
+  </main>
+</Base>
+
+<script>
+  const LEFT = ['', 'One rule to go', 'Two rules to go', 'Three rules to go', 'Accept the code to enter'];
+
+  document.addEventListener('astro:page-load', () => {
+    const seat = document.querySelector('[data-seat]');
+    if (!seat) return;
+    const boxes = [...document.querySelectorAll('[data-norm]')];
+    const ticks = [...seat.querySelectorAll('.seat__ticks span')];
+    const status = seat.querySelector('[data-seat-status]');
+    const enter = seat.querySelector('[data-seat-enter]');
+    LEFT[0] = enter ? 'Seat ready — welcome in' : 'Code accepted — the invite opens soon';
+
+    const update = () => {
+      const left = boxes.filter((b) => !b.checked).length;
+      boxes.forEach((b, i) => ticks[i].classList.toggle('is-on', b.checked));
+      seat.classList.toggle('is-ready', left === 0);
+      status.textContent = LEFT[left];
+      if (enter && left > 0) enter.setAttribute('aria-disabled', 'true');
+      else enter?.removeAttribute('aria-disabled');
+    };
+    enter?.addEventListener('click', (e) => {
+      if (enter.hasAttribute('aria-disabled')) e.preventDefault();
+    });
+    boxes.forEach((b) => b.addEventListener('change', update));
+    update();
+  });
+</script>

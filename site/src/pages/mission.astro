@@ -1,0 +1,121 @@
+---
+import fs from 'node:fs';
+import path from 'node:path';
+import Base from '../layouts/Base.astro';
+import { Content, frontmatter } from '../mission.md';
+import { longDate } from '../lib/format.js';
+
+const title = frontmatter.title ?? 'Belief';
+const subtitle = frontmatter.subtitle ?? '';
+const documentTitle = frontmatter.documentTitle ?? 'Read the document';
+
+const pdfPath = path.join(process.cwd(), 'public', 'document.pdf');
+const hasDocument = fs.existsSync(pdfPath);
+const bytes = hasDocument ? fs.statSync(pdfPath).size : 0;
+const size = bytes >= 1048576 ? `${(bytes / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`;
+
+const chapters = [
+  {
+    part: 'Placeholder Part Title',
+    chapters: [
+      { title: 'Placeholder Title', items: [
+        'De finibus bonorum et malorum, perspiciatis unde omnis iste natus error',
+        'Sed ut perspiciatis unde omnis iste natus error sit voluptatem',
+      ]},
+      { title: 'Placeholder Title', items: [
+        'At vero eos et accusamus et iusto odio dignissimos ducimus',
+        'Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet',
+      ]},
+      { title: 'Placeholder Title', items: [
+        'Quis autem vel eum iure reprehenderit qui in ea voluptate',
+      ]},
+    ],
+  },
+  {
+    part: 'Placeholder Part Title',
+    chapters: [
+      { title: 'Placeholder Title', items: [
+        'Temporibus autem quibusdam et aut officiis debitis aut rerum necessitatibus',
+        'Nam libero tempore, cum soluta nobis est eligendi optio cumque',
+      ]},
+      { title: 'Placeholder Title', items: [
+        'Itaque earum rerum hic tenetur a sapiente delectus',
+        'Et harum quidem rerum facilis est et expedita distinctio',
+      ]},
+      { title: 'Placeholder Title', items: [
+        'Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit',
+        'Similique sunt in culpa qui officia deserunt mollitia animi',
+      ]},
+    ],
+  },
+  {
+    part: 'Placeholder Part Title',
+    chapters: [
+      { title: 'Placeholder Title', items: [
+        'Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium',
+        'Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis',
+      ]},
+      { title: 'Placeholder Title', items: [
+        'At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis',
+      ]},
+      { title: 'Placeholder Title', items: [
+        'Omnis voluptas assumenda est, omnis dolor repellendus',
+        'Reiciendis voluptatibus maiores alias consequatur aut perferendis doloribus',
+      ]},
+    ],
+  },
+];
+---
+<Base title={title} description={subtitle || undefined} register="folio">
+  <main id="main" class="wrap page-head">
+    <section class="manifesto" aria-labelledby="mission-title">
+      <div class="manifesto__side">
+        <p class="label reveal">Manifesto</p>
+        <h1 id="mission-title" class="h-page reveal" style="--d:1">{title}</h1>
+        {subtitle && <p class="manifesto__subtitle reveal" style="--d:2">{subtitle}</p>}
+        {frontmatter.lastRevised && (
+          <p class="label reveal" style="--d:3">Last revised <time datetime={new Date(frontmatter.lastRevised).toISOString()}>{longDate(new Date(frontmatter.lastRevised))}</time></p>
+        )}
+      </div>
+      <div class="manifesto__body prose reveal" style="--d:2"><Content /></div>
+    </section>
+
+    <section class="manifesto" aria-labelledby="toc-title">
+      <div class="manifesto__side">
+        <h2 id="toc-title" class="h-section reveal">Table of <em>Contents</em></h2>
+        <p class="manifesto__note reveal" style="--d:1">Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium</p>
+      </div>
+      <div class="manifesto__body">
+        {chapters.map((part) => (
+          <div class="toc-part reveal">
+            <h3 class="label">{part.part}</h3>
+            {part.chapters.map((ch) => (
+              <div class="toc-chapter">
+                <h4>{ch.title}</h4>
+                <ul>
+                  {ch.items.map((item) => <li><a href="#">{item}</a></li>)}
+                </ul>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <section class="manifesto" aria-labelledby="manuscript-title">
+      <div class="manifesto__side">
+        <h2 id="manuscript-title" class="h-section reveal">Manuscript</h2>
+      </div>
+      <div class="manifesto__body reveal">
+        {hasDocument ? (
+          <a class="document-link spot" href="/document.pdf">
+            <span class="document-link__title">{documentTitle}</span>
+            <span class="label">PDF, {size}</span>
+          </a>
+        ) : (
+          <p class="manifesto__note">Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet.</p>
+        )}
+      </div>
+    </section>
+  </main>
+</Base>
