@@ -1,7 +1,7 @@
 ---
 title: "Inflationary Paperology"
 date: 2026-10-14
-author: "Apostolos Tsampodimos & Nathaniel Sherrill"
+author: "Apostolos Tsampodimos and Nathaniel Sherrill"
 excerpt: "A currency inflated beyond all reference to value ceases to function as one. The metric has not merely become imperfect; it has become outdated, obsolete, and perhaps even meaningless."
 image: /assets/images/inflation.jpg
 tags: ["academia", "AI"]
