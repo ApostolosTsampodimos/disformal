@@ -107,6 +107,16 @@ main { flex: 1 0 auto; }
 @keyframes tagline-fade { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
 @media (prefers-reduced-motion: reduce) { .hero-tagline { animation: none; } }
 
+/* ---------- people ---------- */
+.people { width: 100%; max-width: 72rem; margin: 0 auto; padding: clamp(2.5rem, 6vw, 4rem) clamp(1rem, 4vw, 3.5rem); }
+.people-title { margin: 0 0 2rem; font: 400 clamp(2.8rem, 7vw, 4.5rem)/1 var(--f-body); letter-spacing: -.02em; }
+.people-photo { width: 100%; height: auto; display: block; border: 1px solid var(--line); border-radius: 6px; }
+.people-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1.5rem; }
+.person { border: 1px solid var(--line); border-radius: 6px; padding: 1.25rem 1.5rem; }
+.person-name { margin: 0; font: 600 1.5rem/1.3 var(--f-body); }
+.person-role { margin: .25rem 0 0; font: 1rem/1.5 var(--f-mono); color: var(--accent); }
+@media (max-width: 700px) { .people-cards { grid-template-columns: 1fr; } }
+
 /* ---------- 404 ---------- */
 .not-found { text-align: center; padding-top: clamp(4rem, 12vh, 8rem); }
 .not-found-code { font: 600 clamp(5rem, 20vw, 10rem)/1 var(--f-mono); color: var(--line); margin: 0 0 1rem; letter-spacing: -.04em; }

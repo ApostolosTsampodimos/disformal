@@ -21,7 +21,7 @@ const years = Object.keys(byYear).map(Number).sort((a, b) => b - a);
             <li class="archive-item">
               <a href={`/${post.id}/`} class="archive-link">
                 <span class="archive-title">{post.data.title}</span>
-                <span class="archive-date">{post.data.date.toISOString().slice(5, 10)}</span>
+                <span class="archive-date">{post.data.comingSoon ? 'Coming soon' : post.data.date.toISOString().slice(5, 10)}</span>
               </a>
             </li>
           ))}

@@ -8,3 +8,9 @@ this*.png
 inflation.png
 b2764a45-*.jpg
 Screenshot*.png
+
+# macOS, live-site mirror, source material, deploy zips
+.DS_Store
+Hostinger_public/
+source-files/
+deploy/

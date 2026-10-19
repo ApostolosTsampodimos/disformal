@@ -1,0 +1,28 @@
+---
+import Base from '../layouts/Base.astro';
+
+const people = [
+  {
+    name: 'Nathaniel Sherrill',
+    role: 'Postdoc · Institute for Theoretical Physics · Leibniz University Hannover',
+  },
+  {
+    name: 'Apostolos Tsampodimos',
+    role: 'PhD Student · FTMC & Vilnius University',
+  },
+];
+---
+<Base title="People" current="people">
+  <main id="main" class="people">
+    <h1 class="people-title">People</h1>
+    <img class="people-photo" src="/assets/people.webp" width="1280" height="960" alt="Nathaniel Sherrill (left) and Apostolos Tsampodimos (right)" />
+    <div class="people-cards">
+      {people.map(p => (
+        <section class="person">
+          <h2 class="person-name">{p.name}</h2>
+          <p class="person-role">{p.role}</p>
+        </section>
+      ))}
+    </div>
+  </main>
+</Base>

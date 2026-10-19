@@ -32,7 +32,7 @@ const fmtDate = (d: Date) => d.toISOString().slice(0, 10);
             <div class="card-body">
               <h2 class="card-title">{post.data.title}</h2>
               <div class="card-meta">
-                <time class="card-date" datetime={post.data.date.toISOString()}>{fmtDate(post.data.date)}</time>
+                {post.data.comingSoon ? <span class="card-date">Coming soon</span> : <time class="card-date" datetime={post.data.date.toISOString()}>{fmtDate(post.data.date)}</time>}
               </div>
             </div>
           </a>

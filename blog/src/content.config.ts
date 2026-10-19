@@ -21,6 +21,7 @@ const posts = defineCollection({
     excerpt: z.string().optional(),
     audio: z.string().optional(),
     featured: z.boolean().optional().default(false),
+    comingSoon: z.boolean().optional().default(false),
     lastRevised: z.coerce.date().optional(),
   }),
 });

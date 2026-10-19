@@ -18,8 +18,7 @@ const ICONS: Record<string, string> = {
   Substack: 'M22.539 8.242H1.46V5.406h21.08v2.836zM1.46 10.812V24L12 18.11 22.54 24V10.812H1.46zM22.54 0H1.46v2.836h21.08V0z',
 };
 
-// GitHub and Substack always show their logo; with a URL it is a link, without one it is just the logo.
-const links = Object.entries(SOCIAL).filter(([label, url]) => url || ICONS[label]);
+const links = Object.entries(SOCIAL).filter(([, url]) => url);
 ---
 <!doctype html>
 <html lang="en">
@@ -51,6 +50,7 @@ const links = Object.entries(SOCIAL).filter(([label, url]) => url || ICONS[label
     <nav class="site-nav" aria-label="Primary">
       <a href={BLOG_URL} aria-current={current === 'blog' ? 'page' : undefined}>blog</a>
       <a href={MISSION_URL} aria-current={current === 'mission' ? 'page' : undefined}>mission</a>
+      <a href={`${MAIN_URL}/people/`}>people</a>
     </nav>
   </header>
 
@@ -59,21 +59,15 @@ const links = Object.entries(SOCIAL).filter(([label, url]) => url || ICONS[label
   <footer class="site-footer">
     {links.length > 0 && (
       <nav class="social" aria-label="Social">
-        {links.map(([label, url]) =>
-          url ? (
-            <a href={url} rel="me noopener" target="_blank" title={label} aria-label={ICONS[label] ? label : undefined}>
-              {ICONS[label] ? (
-                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d={ICONS[label]} /></svg>
-              ) : (
-                label
-              )}
-            </a>
-          ) : (
-            <span class="social-icon" role="img" aria-label={label} title={label}>
+        {links.map(([label, url]) => (
+          <a href={url} rel="me noopener" target="_blank" title={label} aria-label={ICONS[label] ? label : undefined}>
+            {ICONS[label] ? (
               <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d={ICONS[label]} /></svg>
-            </span>
-          )
-        )}
+            ) : (
+              label
+            )}
+          </a>
+        ))}
       </nav>
     )}
   </footer>

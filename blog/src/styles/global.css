@@ -184,6 +184,7 @@ main { flex: 1 0 auto; }
   gap: 1.5rem;
   align-items: stretch;
 }
+.featured-hero:only-child { grid-column: 1 / -1; }
 
 /* hero card (left) */
 .featured-hero {

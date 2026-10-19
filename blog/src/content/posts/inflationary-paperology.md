@@ -3,10 +3,12 @@ title: "Inflationary Paperology"
 date: 2026-10-14
 author: "Apostolos Tsampodimos & Nathaniel Sherrill"
 excerpt: "A currency inflated beyond all reference to value ceases to function as one. The metric has not merely become imperfect; it has become outdated, obsolete, and perhaps even meaningless."
-image: /assets/images/inflation.png
+image: /assets/images/inflation.jpg
 tags: ["academia", "AI"]
 featured: true
 ---
+
+*Article first published on Substack: [apostolostsampodimos.substack.com](https://apostolostsampodimos.substack.com/p/inflationary-paperology)*
 
 The number of papers published per year is, in practice, the primary currency of academic research. It is the metric by which grants are awarded, positions are secured, and careers are made.
 
